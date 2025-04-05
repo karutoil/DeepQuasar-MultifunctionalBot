@@ -192,8 +192,9 @@ class MusicBot(commands.Cog):
         try:
             data = await asyncio.to_thread(ytdl.extract_info, query, download=False)
 
+            # Check for livestreams and block them
+            is_live = False
             if 'entries' in data:
-                # This is a playlist or search result
                 entries = data['entries']
                 if not entries:
                     embed = discord.Embed(
@@ -205,6 +206,16 @@ class MusicBot(commands.Cog):
                     return
 
                 first_entry = entries[0]
+                is_live = first_entry.get('is_live', False)
+                if is_live:
+                    embed = discord.Embed(
+                        title="❌ Error",
+                        description="Livestreams are not supported.",
+                        color=discord.Color.red()
+                    )
+                    await interaction.followup.send(embed=embed)
+                    return
+
                 url = first_entry['url']
                 title = first_entry['title']
 
@@ -221,6 +232,16 @@ class MusicBot(commands.Cog):
                     )
                     await interaction.followup.send(embed=embed)
             else:
+                is_live = data.get('is_live', False)
+                if is_live:
+                    embed = discord.Embed(
+                        title="❌ Error",
+                        description="Livestreams are not supported.",
+                        color=discord.Color.red()
+                    )
+                    await interaction.followup.send(embed=embed)
+                    return
+
                 # Single video
                 url = data['url']
                 title = data['title']
@@ -400,19 +421,33 @@ class MusicBot(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="volume", description="Adjust the player volume (0-200%)")
+    @app_commands.command(name="volume", description="Adjust or view the player volume (0-200%)")
     @app_commands.describe(level="Volume level (0-200)")
-    async def volume(self, interaction: discord.Interaction, level: int):
-        """Adjusts the player volume"""
-        if interaction.guild.voice_client is None or not interaction.guild.voice_client.is_playing():
+    async def volume(self, interaction: discord.Interaction, level: int = None):
+        """Adjusts or shows the player volume"""
+        voice_client = interaction.guild.voice_client
+
+        # Determine current volume
+        current_volume = None
+        if voice_client and voice_client.source and hasattr(voice_client.source, "volume"):
+            current_volume = int(voice_client.source.volume * 100)
+        else:
+            saved_volume = self.get_volume(interaction.guild.id)
+            if saved_volume is not None:
+                current_volume = int(saved_volume * 100)
+            else:
+                current_volume = 50  # default
+
+        if level is None:
+            # Just show current volume
             embed = discord.Embed(
-                title="❌ Error",
-                description="Nothing is playing!",
-                color=discord.Color.red()
+                title="🔊 Current Volume",
+                description=f"Current volume is {current_volume}%",
+                color=discord.Color.blue()
             )
             await interaction.response.send_message(embed=embed)
             return
-        
+
         if level < 0 or level > 200:
             embed = discord.Embed(
                 title="❌ Error",
@@ -421,14 +456,17 @@ class MusicBot(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
             return
-        
-        # Get the current player (PCMVolumeTransformer)
-        player = interaction.guild.voice_client.source
-        player.volume = level / 100  # Convert percentage to float (0.0-2.0)
+
+        # Set new volume
+        new_volume = level / 100  # Convert percentage to float (0.0-2.0)
 
         # Save volume to database
-        self.save_volume(interaction.guild.id, player.volume)
-        
+        self.save_volume(interaction.guild.id, new_volume)
+
+        # If connected and has a source, update live volume
+        if voice_client and voice_client.source and hasattr(voice_client.source, "volume"):
+            voice_client.source.volume = new_volume
+
         embed = discord.Embed(
             title="🔊 Volume Adjusted",
             description=f"Set volume to {level}%",
@@ -436,5 +474,7 @@ class MusicBot(commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
+async def setup(bot):
+    await bot.add_cog(MusicBot(bot))
 async def setup(bot):
     await bot.add_cog(MusicBot(bot))
