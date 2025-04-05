@@ -70,3 +70,38 @@ brew install ffmpeg
 sudo apt update
 sudo apt install ffmpeg
 ```
+
+## Docker Usage
+
+### Build Docker Image
+
+```bash
+docker build -t musicbot .
+```
+
+### Run Docker Container
+
+```bash
+docker run --name musicbot-container --env-file .env musicbot
+```
+
+### Using Docker Compose
+
+You can also use Docker Compose to build and run the bot easily.
+
+```bash
+docker-compose up --build
+```
+
+This will:
+- Build the Docker image
+- Start the container named `musicbot-container`
+- Load environment variables from your `.env` file
+
+To stop the bot:
+
+```bash
+docker-compose down
+```
+
+**Note:** Make sure your `.env` file is present in the project root before running Docker or Docker Compose.
