@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2025-04-04T23:27:45-04:00",
+  "name": "DeepQuasar Multifunctional Bot",
+  "author": "Cline",
+  "description": "A Pterodactyl egg for DeepQuasar multifunctional Discord bot using karutoil/deepquasar-multifunctionalbot Docker image.",
+  "features": null,
+  "docker_images": {
+    "DeepQuasar Bot": "karutoil/deepquasar-multifunctionalbot:latest"
+  },
+  "file_denylist": [],
+  "startup": "python3 main.py",
+  "config": {
+    "files": {},
+    "startup": {
+      "done": "Logged in as"
+    },
+    "logs": {
+      "custom": false,
+      "location": "logs/latest.log"
+    },
+    "stop": "stop"
+  },
+  "scripts": {
+    "installation": {
+      "script": "",
+      "container": "python:3.9",
+      "entrypoint": "bash"
+    },
+    "entrypoint": "bash"
+  },
+  "variables": [
+    {
+      "name": "Discord Bot Token",
+      "description": "Your Discord bot token",
+      "env_variable": "DISCORD_TOKEN",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "required": true
+    }
+  ]
+}
