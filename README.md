@@ -105,3 +105,52 @@ docker-compose down
 ```
 
 **Note:** Make sure your `.env` file is present in the project root before running Docker or Docker Compose.
+
+## Bot Commands
+
+### User Commands
+
+| Command | Description |
+|---------|-------------|
+| `/join` | Joins the voice channel |
+| `/play <query>` | Plays a song from YouTube |
+| `/pause` | Pauses the current song |
+| `/resume` | Resumes the current song |
+| `/stop` | Stops the current song and clears the queue |
+| `/skip` | Skips the current song |
+| `/queue` | Shows the current queue |
+| `/nowplaying` | Shows the currently playing song |
+| `/volume <level>` | Adjust or view the player volume (0-200%) |
+| `/invite_leaderboard` | Show the top invites leaderboard |
+| `/listchannels` | List whitelisted AI channels |
+| `/autorole_status` | Check auto-role status |
+
+### Administrator / Moderator Commands
+
+| Command | Description |
+|---------|-------------|
+| `/setwelcomechannel` | Set the welcome message channel |
+| `/setleavechannel` | Set the leave message channel |
+| `/setticket` | Configure ticketing system |
+| `/createpanel` | Create a ticket panel |
+| `/createreactionroles` | Start creating a reaction role message |
+| `/addreactionrole` | Add a role to the current reaction role message |
+| `/finishreactionroles` | Post the reaction role message |
+| `/editreactionroles` | Add more roles to an existing reaction role message |
+| `/removereactionrole` | Remove a reaction role from a message |
+| `/setmodlog` | Set the moderation log channel |
+| `/togglemodlog` | Toggle specific moderation log events |
+| `/toggleallmodlog` | Toggle all moderation log events |
+| `/ailocal` | Configure local AI settings |
+| `/aiprompt` | Set AI prompt |
+| `/toggleai` | Enable or disable AI features |
+| `/aichannel` | Set AI channel |
+| `/embedcreate` | Create an embed message |
+| `/embededit` | Edit an existing embed message |
+| `/embedget` | Get an embed message |
+| `/embedbuilder` | Interactively build an embed with buttons |
+| `/cleanup` | Delete the last X messages in this channel |
+| `/cleanup_all` | Delete all messages in this channel |
+| `/cleanup_user` | Delete a number of messages from a specific user |
+| `/set_autorole` | Set role for new members |
+| `/remove_autorole` | Remove auto-role |
