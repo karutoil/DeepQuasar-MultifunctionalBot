@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 # Copy requirements and install
 COPY requirements.txt /app/
 RUN pip install --upgrade pip
+RUN pip install --upgrade yt-dlp
 RUN pip install -r requirements.txt
 
 # Copy project files

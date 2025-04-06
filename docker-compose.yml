@@ -5,4 +5,6 @@ services:
     image: karutoil/deepquasar-multifunctionalbot:latest
     container_name: musicbot-container
     env_file: .env
+    volumes:
+      - ./data:/app/data
     restart: unless-stopped
