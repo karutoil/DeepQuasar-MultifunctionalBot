@@ -2,12 +2,7 @@ version: '3.8'
 
 services:
   musicbot:
-    build: .
+    image: karutoil/deepquasar-multifunctionalbot:latest
     container_name: musicbot-container
     env_file: .env
-    # Uncomment if your bot needs ffmpeg or other system packages installed in Dockerfile
-    # depends_on:
-    #   - some_other_service
-    # ports:
-    #   - "8000:8000"  # Not usually needed for Discord bots
     restart: unless-stopped
