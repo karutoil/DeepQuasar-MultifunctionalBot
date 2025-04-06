@@ -52,6 +52,23 @@ async def about_command(interaction: discord.Interaction):
     embed.set_footer(text="Powered by AI and a hint of human assistance 🤖✨")
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="list_cogs", description="List all currently loaded cogs")
+async def list_cogs(interaction: discord.Interaction):
+    """Slash command to list all loaded cogs"""
+    loaded_cogs = list(bot.cogs.keys())
+    if loaded_cogs:
+        cog_list = "\n".join(f"- {name}" for name in loaded_cogs)
+        description = f"**Loaded Cogs:**\n{cog_list}"
+    else:
+        description = "No cogs are currently loaded."
+
+    embed = discord.Embed(
+        title="📦 Loaded Cogs",
+        description=description,
+        color=discord.Color.blue()
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
 @bot.listen()
 async def on_app_command_completion(interaction: discord.Interaction, command: discord.app_commands.Command):
     try:

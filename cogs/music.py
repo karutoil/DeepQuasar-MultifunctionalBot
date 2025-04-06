@@ -7,6 +7,7 @@ from collections import deque
 from discord.utils import get
 from discord import Forbidden, HTTPException
 import sqlite3  # Added for volume persistence
+import datetime
 
 # Suppress noise about console usage from errors
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -98,13 +99,17 @@ class MusicBot(commands.Cog):
     async def play_next(self, interaction):
         queue = self.get_queue(interaction.guild.id)
         if not queue:
+            # Queue empty, disconnect if connected
+            voice_client = interaction.guild.voice_client
+            if voice_client and voice_client.is_connected():
+                await voice_client.disconnect()
             return
         
         # Get both URL and title from the queue
         next_item = queue.popleft()
-        if isinstance(next_item, tuple):  # If queue stores (url, title)
+        if isinstance(next_item, tuple):  # (url, title)
             url, title = next_item
-        else:  # For backward compatibility
+        else:
             url = next_item
             # Try to get title again
             try:
@@ -122,7 +127,11 @@ class MusicBot(commands.Cog):
             if saved_volume is not None:
                 player.volume = saved_volume
 
-            interaction.guild.voice_client.play(
+            # Save start time info
+            voice_client = interaction.guild.voice_client
+            voice_client._start_time = datetime.datetime.now()
+
+            voice_client.play(
                 player, 
                 after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(interaction), self.bot.loop)
             )
@@ -220,9 +229,11 @@ class MusicBot(commands.Cog):
                 title = first_entry['title']
 
                 queue = self.get_queue(interaction.guild.id)
-                queue.append((url, title))  # Store both URL and title
+                queue.append((url, title))  # Store URL and title
 
-                if not interaction.guild.voice_client.is_playing():
+                voice_client = interaction.guild.voice_client
+                # If not playing and not paused, start playback
+                if not voice_client.is_playing() and not voice_client.is_paused():
                     await self.play_next(interaction)
                 else:
                     embed = discord.Embed(
@@ -247,9 +258,11 @@ class MusicBot(commands.Cog):
                 title = data['title']
 
                 queue = self.get_queue(interaction.guild.id)
-                queue.append((url, title))  # Store both URL and title
+                queue.append((url, title))  # Store URL and title
 
-                if not interaction.guild.voice_client.is_playing():
+                voice_client = interaction.guild.voice_client
+                # If not playing and not paused, start playback
+                if not voice_client.is_playing() and not voice_client.is_paused():
                     await self.play_next(interaction)
                 else:
                     embed = discord.Embed(
@@ -396,7 +409,8 @@ class MusicBot(commands.Cog):
     @app_commands.command(name="nowplaying", description="Shows the currently playing song")
     async def nowplaying(self, interaction: discord.Interaction):
         """Shows the currently playing song"""
-        if interaction.guild.voice_client is None or not interaction.guild.voice_client.is_playing():
+        voice_client = interaction.guild.voice_client
+        if voice_client is None or not voice_client.is_playing():
             embed = discord.Embed(
                 title="❌ Error",
                 description="Nothing is playing!",
@@ -405,21 +419,15 @@ class MusicBot(commands.Cog):
             await interaction.response.send_message(embed=embed)
             return
         
-        player = interaction.guild.voice_client.source
-        if hasattr(player, 'title'):
-            embed = discord.Embed(
-                title="🎵 Now Playing",
-                description=f"**{player.title}**",
-                color=discord.Color.green()
-            )
-            await interaction.response.send_message(embed=embed)
-        else:
-            embed = discord.Embed(
-                title="🎵 Now Playing",
-                description="[Unknown title]",
-                color=discord.Color.green()
-            )
-            await interaction.response.send_message(embed=embed)
+        player = voice_client.source
+        title = getattr(player, 'title', '[Unknown title]')
+
+        embed = discord.Embed(
+            title="🎵 Now Playing",
+            description=f"**{title}**",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="volume", description="Adjust or view the player volume (0-200%)")
     @app_commands.describe(level="Volume level (0-200)")
