@@ -371,15 +371,28 @@ class MusicBot(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
             return
-        
+
+        queue = self.get_queue(interaction.guild.id)
         interaction.guild.voice_client.stop()
-        embed = discord.Embed(
-            title="⏭️ Skipped",
-            description="The current song has been skipped.",
-            color=discord.Color.blue()
-        )
-        await interaction.response.send_message(embed=embed)
-        await self.play_next(interaction)
+
+        if queue:
+            embed = discord.Embed(
+                title="⏭️ Skipped",
+                description="The current song has been skipped. Playing next in queue...",
+                color=discord.Color.blue()
+            )
+            await interaction.response.send_message(embed=embed)
+            await self.play_next(interaction)
+        else:
+            embed = discord.Embed(
+                title="⏭️ Skipped",
+                description="The current song has been skipped. No more songs in queue.",
+                color=discord.Color.blue()
+            )
+            await interaction.response.send_message(embed=embed)
+            # Disconnect after finishing queue
+            if interaction.guild.voice_client and interaction.guild.voice_client.is_connected():
+                await interaction.guild.voice_client.disconnect()
     
     @app_commands.command(name="queue", description="Shows the current queue")
     async def queue(self, interaction: discord.Interaction):
