@@ -6,6 +6,11 @@ from db.ticket_db import TicketDB  # your existing DB helper
 
 
 class Tickets(commands.Cog):
+    tickets_group = app_commands.Group(
+        name="tickets",
+        description="Ticket system management"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = TicketDB()
@@ -56,14 +61,16 @@ class Tickets(commands.Cog):
 
         await self.send_log(interaction.guild, f"🎟 Ticket {channel.mention} created by {interaction.user.mention}")
 
-    @app_commands.command(name="setticket")
-    @app_commands.default_permissions(administrator=True)
+    @tickets_group.command(name="setup", description="Configure ticket system categories, roles, logs")
     async def setticket(self, interaction: discord.Interaction,
                         ticket_category: discord.CategoryChannel,
                         archive_category: discord.CategoryChannel,
                         support_roles: str,
                         log_channel: discord.TextChannel):
-        """Configure ticket system categories, roles, logs"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         role_ids = []
         for rid in support_roles.split(","):
             rid = rid.strip()
@@ -79,13 +86,15 @@ class Tickets(commands.Cog):
         )
         await interaction.response.send_message("Ticket system configured.", ephemeral=True)
 
-    @app_commands.command(name="createpanel")
-    @app_commands.default_permissions(administrator=True)
+    @tickets_group.command(name="panel", description="Send the ticket creation panel")
     async def createpanel(self, interaction: discord.Interaction,
                           channel: discord.TextChannel,
                           title: str,
                           description: str):
-        """Sends the ticket creation panel"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         embed = discord.Embed(title=title, description=description, color=0x3498db)
         view = TicketPanelView(self.bot)
         await channel.send(embed=embed, view=view)

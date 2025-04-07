@@ -3,26 +3,40 @@ from discord.ext import commands
 from discord import app_commands
 
 class Cleanup(commands.Cog):
+    cleanup_group = app_commands.Group(
+        name="cleanup",
+        description="Bulk delete messages"
+    )
+
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="cleanup", description="Delete the last X messages in this channel.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @cleanup_group.command(name="messages", description="Delete the last X messages in this channel.")
     async def cleanup(self, interaction: discord.Interaction, amount: int):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
         deleted = await interaction.channel.purge(limit=amount)
         await interaction.followup.send(f"Deleted {len(deleted)} messages.", ephemeral=True)
 
-    @app_commands.command(name="cleanup_all", description="Delete all messages in this channel.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @cleanup_group.command(name="all", description="Delete all messages in this channel.")
     async def cleanup_all(self, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         await interaction.response.defer(ephemeral=True)
         deleted = await interaction.channel.purge()
         await interaction.followup.send(f"Deleted {len(deleted)} messages.", ephemeral=True)
 
-    @app_commands.command(name="cleanup_user", description="Delete a number of messages from a specific user.")
-    @app_commands.checks.has_permissions(administrator=True)
+    @cleanup_group.command(name="user", description="Delete a number of messages from a specific user.")
     async def cleanup_user(self, interaction: discord.Interaction, user: discord.Member, amount: int):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         import asyncio
 
         await interaction.response.defer(ephemeral=True)

@@ -4,6 +4,11 @@ from discord import app_commands
 from db.autorole_db import AutoRoleDB
 
 class AutoRole(commands.Cog):
+    autorole_group = app_commands.Group(
+        name="autorole",
+        description="Manage auto-role settings"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = AutoRoleDB()
@@ -52,11 +57,13 @@ class AutoRole(commands.Cog):
         except discord.HTTPException as e:
             print(f"❌ Assignment failed: {e}")
 
-    @app_commands.command(name="set_autorole", description="Set role for new members")
-    @app_commands.default_permissions(administrator=True)
+    @autorole_group.command(name="set", description="Set role for new members")
     @app_commands.describe(role="The role to assign automatically")
     async def set_autorole(self, interaction: discord.Interaction, role: discord.Role):
-        """Configure auto-role with persistence"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if not interaction.guild.me.guild_permissions.manage_roles:
             embed = discord.Embed(
                 title="❌ Missing Permissions",
@@ -84,10 +91,12 @@ class AutoRole(commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="remove_autorole", description="Remove auto-role")
-    @app_commands.default_permissions(administrator=True)
+    @autorole_group.command(name="remove", description="Remove auto-role")
     async def remove_autorole(self, interaction: discord.Interaction):
-        """Remove auto-role configuration with persistence"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if interaction.guild.id in self.auto_roles:
             role = interaction.guild.get_role(self.auto_roles[interaction.guild.id])
             self.db.remove_autorole(interaction.guild.id)
@@ -103,9 +112,12 @@ class AutoRole(commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="autorole_status", description="Check auto-role status")
+    @autorole_group.command(name="status", description="Check auto-role status")
     async def autorole_status(self, interaction: discord.Interaction):
-        """Check current configuration"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if interaction.guild.id in self.auto_roles:
             role = interaction.guild.get_role(self.auto_roles[interaction.guild.id])
             status = f"✅ Active: {role.mention}" if role else "❌ Role not found"

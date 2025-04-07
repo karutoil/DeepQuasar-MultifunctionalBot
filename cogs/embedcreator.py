@@ -174,6 +174,11 @@ class EmbedBuilderView(discord.ui.View):
 # ------------- YOUR COG, extended ----------------
 
 class EmbedCreator(commands.Cog):
+    embed_group = app_commands.Group(
+        name="embed",
+        description="Embed management commands"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self._init_db()
@@ -227,13 +232,19 @@ class EmbedCreator(commands.Cog):
             print(f"Error parsing embed: {e}")
             return None
 
-    @app_commands.command(name="embedcreate")
-    @app_commands.default_permissions(manage_messages=True)
+    @embed_group.command(
+        name="create",
+        description="Create an embed from JSON"
+    )
     @app_commands.describe(
         json_input="Embed JSON (use https://embed.discord.website/ to create)",
         channel="Channel to post in (defaults to current)"
     )
     async def create_embed(self, interaction: discord.Interaction, json_input: str, channel: Optional[discord.TextChannel] = None):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         target_channel = channel or interaction.channel
         embed = await self.parse_embed_json(json_input)
         if not embed:
@@ -248,13 +259,19 @@ class EmbedCreator(commands.Cog):
         except discord.Forbidden:
             await interaction.response.send_message("I don't have permission to send messages there.", ephemeral=True)
 
-    @app_commands.command(name="embededit")
-    @app_commands.default_permissions(manage_messages=True)
+    @embed_group.command(
+        name="edit",
+        description="Edit an existing embed by message ID"
+    )
     @app_commands.describe(
         message_id="ID of the message to edit",
         new_json="New embed JSON"
     )
     async def edit_embed(self, interaction: discord.Interaction, message_id: str, new_json: str):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         try:
             message_id_int = int(message_id)
         except:
@@ -284,10 +301,16 @@ class EmbedCreator(commands.Cog):
         except discord.Forbidden:
             await interaction.response.send_message("I don't have permission to edit that message.", ephemeral=True)
 
-    @app_commands.command(name="embedget")
-    @app_commands.default_permissions(manage_messages=True)
+    @embed_group.command(
+        name="get",
+        description="Get the JSON of an existing embed"
+    )
     @app_commands.describe(message_id="ID of the message to get JSON from")
     async def get_embed_json(self, interaction: discord.Interaction, message_id: str):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         try:
             message_id_int = int(message_id)
         except:
@@ -308,9 +331,15 @@ class EmbedCreator(commands.Cog):
                 continue
         await interaction.response.send_message("Message not found or no embed.", ephemeral=True)
 
-    @app_commands.command(name="embedbuilder", description="Interactively build an embed with buttons")
-    @app_commands.default_permissions(manage_messages=True)
+    @embed_group.command(
+        name="builder",
+        description="Interactively build an embed with buttons"
+    )
     async def embedbuilder(self, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         """Create an embed interactively with editing buttons."""
         view = EmbedBuilderView(self.bot, interaction.user, interaction, self)
         await interaction.response.send_message("Interactive embed builder started! Edit your embed using the buttons below:", embed=view.embed, view=view, ephemeral=True)

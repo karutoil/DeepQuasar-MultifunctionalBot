@@ -5,6 +5,11 @@ from db.welcome_leave_db import WelcomeLeaveDB
 from datetime import datetime
 
 class WelcomeLeave(commands.Cog):
+    welcome_group = app_commands.Group(
+        name="welcome",
+        description="Welcome and leave message settings"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = WelcomeLeaveDB()
@@ -41,15 +46,21 @@ class WelcomeLeave(commands.Cog):
         embed.set_thumbnail(url=member.display_avatar.url)
         return embed
 
-    @app_commands.command(name="setwelcomechannel", description="Set the welcome message channel")
-    @app_commands.checks.has_permissions(administrator=True)
+    @welcome_group.command(name="setwelcome", description="Set the welcome message channel")
     async def set_welcome_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         self.db.set_welcome_channel(interaction.guild.id, channel.id)
         await interaction.response.send_message(f"Welcome channel set to {channel.mention}", ephemeral=True)
 
-    @app_commands.command(name="setleavechannel", description="Set the leave message channel")
-    @app_commands.checks.has_permissions(administrator=True)
+    @welcome_group.command(name="setleave", description="Set the leave message channel")
     async def set_leave_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         self.db.set_leave_channel(interaction.guild.id, channel.id)
         await interaction.response.send_message(f"Leave channel set to {channel.mention}", ephemeral=True)
 

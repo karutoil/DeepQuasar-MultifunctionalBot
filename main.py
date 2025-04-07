@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import wavelink
 import os
 from dotenv import load_dotenv
 
@@ -127,5 +128,7 @@ async def on_command_completion(ctx):
     except Exception:
         pass  # Avoid crashing on logging errors
     
+
 if __name__ == "__main__":
+    print("Starting Discord bot...")
     bot.run(os.getenv('DISCORD_TOKEN'))

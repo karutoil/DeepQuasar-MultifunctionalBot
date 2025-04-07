@@ -3,10 +3,15 @@ from discord.ext import commands
 from discord import app_commands
 
 class InviteLeaderboard(commands.Cog):
+    invites_group = app_commands.Group(
+        name="invites",
+        description="Invite management commands"
+    )
+
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="invite_leaderboard", description="Show the top invites leaderboard.")
+    @invites_group.command(name="leaderboard", description="Show the top invites leaderboard.")
     async def invite_leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
 

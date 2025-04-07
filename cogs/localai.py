@@ -7,6 +7,11 @@ from db.localai_db import LocalAIDB
 from typing import Optional, List
 
 class LocalAI(commands.Cog):
+    chatbot_group = app_commands.Group(
+        name="chatbot",
+        description="Manage your local AI chatbot"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = LocalAIDB()
@@ -98,8 +103,7 @@ class LocalAI(commands.Cog):
                 # Reply to the message
                 await message.reply(response, mention_author=False)
 
-    @app_commands.command(name="ailocal")
-    @app_commands.default_permissions(administrator=True)
+    @chatbot_group.command(name="configure", description="Configure your local AI endpoint")
     @app_commands.describe(
         api_base="Your local API URL (e.g., http://localhost:1234)",
         api_key="API key if required (leave empty if none)",
@@ -112,7 +116,10 @@ class LocalAI(commands.Cog):
         api_key: Optional[str] = None,
         model_name: str = "local-model"
     ):
-        """Configure your local AI endpoint"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if not api_base.startswith(('http://', 'https://')):
             return await interaction.response.send_message(
                 "Invalid URL format. Must start with http:// or https://",
@@ -128,8 +135,7 @@ class LocalAI(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.command(name="aiprompt")
-    @app_commands.default_permissions(administrator=True)
+    @chatbot_group.command(name="prompt", description="Set a custom system prompt")
     @app_commands.describe(
         prompt="System prompt to prepend to all AI requests (leave empty to clear)"
     )
@@ -138,7 +144,10 @@ class LocalAI(commands.Cog):
         interaction: discord.Interaction,
         prompt: Optional[str] = None
     ):
-        """Set a custom system prompt for your server's AI"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         self.db.set_system_prompt(interaction.guild.id, prompt)
         if prompt:
             await interaction.response.send_message(
@@ -151,19 +160,20 @@ class LocalAI(commands.Cog):
                 ephemeral=True
             )
 
-    @app_commands.command(name="toggleai")
-    @app_commands.default_permissions(administrator=True)
+    @chatbot_group.command(name="toggle", description="Enable or disable AI responses")
     @app_commands.describe(enabled="Enable/disable AI responses")
     async def toggle_ai(self, interaction: discord.Interaction, enabled: bool):
-        """Toggle AI functionality for this server"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         self.db.set_enabled(interaction.guild.id, enabled)
         await interaction.response.send_message(
             f"Local AI responses {'enabled' if enabled else 'disabled'}",
             ephemeral=True
         )
 
-    @app_commands.command(name="aichannel")
-    @app_commands.default_permissions(administrator=True)
+    @chatbot_group.command(name="channel", description="Add or remove a whitelisted channel")
     @app_commands.describe(
         channel="Channel to whitelist",
         action="Add or remove from whitelist"
@@ -174,7 +184,10 @@ class LocalAI(commands.Cog):
         channel: discord.TextChannel,
         action: str
     ):
-        """Manage whitelisted channels"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if action.lower() == "add":
             self.db.add_whitelisted_channel(interaction.guild.id, channel.id)
             await interaction.response.send_message(
@@ -193,9 +206,8 @@ class LocalAI(commands.Cog):
                 ephemeral=True
             )
 
-    @app_commands.command(name="listchannels")
+    @chatbot_group.command(name="listchannels", description="List all whitelisted channels")
     async def list_whitelisted_channels(self, interaction: discord.Interaction):
-        """List all whitelisted channels"""
         channels = self.db.get_whitelisted_channels(interaction.guild.id)
         if not channels:
             return await interaction.response.send_message(

@@ -25,3 +25,9 @@ venv.bak/
 
 # Logs
 *.log
+
+# Exclude batch scripts
+*.bat
+
+# Exclude text files (e.g., cookies)
+*.txt

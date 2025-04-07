@@ -26,10 +26,16 @@ DEFAULT_EVENTS = {
     'thread_create': True,
     'thread_delete': True,
     'thread_update': True,
-    'admin_command': True
+    'admin_command': True,
+    'command': True
 }
 
 class ModLog(commands.Cog):
+    modlog_group = app_commands.Group(
+        name="modlog",
+        description="Moderation log configuration"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = ModLogDB()
@@ -42,9 +48,13 @@ class ModLog(commands.Cog):
         settings = self.db.get_guild_settings(guild_id)
         
         if settings:
+            # Merge defaults with stored enabled_events
+            enabled_events = settings.get('enabled_events') or {}
+            merged_events = DEFAULT_EVENTS.copy()
+            merged_events.update(enabled_events)
             self.guild_settings[guild_id] = {
                 'log_channel_id': settings['log_channel_id'],
-                'enabled_events': settings['enabled_events'] or DEFAULT_EVENTS.copy()
+                'enabled_events': merged_events
             }
         else:
             self.guild_settings[guild_id] = {
@@ -341,10 +351,12 @@ class ModLog(commands.Cog):
 
         await log_channel.send(embed=embed)
 
-    @app_commands.command(name="setmodlog")
-    @app_commands.default_permissions(administrator=True)
+    @modlog_group.command(name="setchannel", description="Set the channel for moderation logs")
     async def set_modlog_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
-        """Set the channel for moderation logs"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         guild_id = interaction.guild.id
         
         # Initialize if not loaded
@@ -368,12 +380,13 @@ class ModLog(commands.Cog):
             details=f"Set log channel to {channel.mention} (ID: {channel.id})"
         )
 
-    # Command to toggle events
-    @app_commands.command(name="togglemodlog")
-    @app_commands.default_permissions(administrator=True)
+    @modlog_group.command(name="toggle", description="Enable or disable a specific log event")
     @app_commands.describe(event="The event to toggle")
     async def toggle_modlog_event(self, interaction: discord.Interaction, event: str):
-        """Enable/disable specific log events"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         guild_id = interaction.guild.id
         
         if guild_id not in self.guild_settings:
@@ -409,11 +422,12 @@ class ModLog(commands.Cog):
                 ephemeral=True
             )
 
-    # Command to toggle all events on/off
-    @app_commands.command(name="toggleallmodlog")
-    @app_commands.default_permissions(administrator=True)
+    @modlog_group.command(name="toggleall", description="Enable or disable all moderation log events")
     async def toggle_all_modlog_events(self, interaction: discord.Interaction):
-        """Enable or disable all moderation log events"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         guild_id = interaction.guild.id
 
         if guild_id not in self.guild_settings:
@@ -547,6 +561,50 @@ class ModLog(commands.Cog):
             before_sticker = next((s for s in before if s.id == sticker.id), None)
             if before_sticker and (before_sticker.name != sticker.name or before_sticker.description != sticker.description):
                 await self.log_action(guild.id, "sticker_update", before=before_sticker, after=sticker)
+
+    @commands.Cog.listener()
+    async def on_app_command_completion(self, interaction: discord.Interaction, command: app_commands.Command):
+        try:
+            guild = interaction.guild
+            if not guild:
+                return
+
+            params_list = interaction.data.get("options", []) if interaction.data else []
+            params = ", ".join(f"{opt['name']}={opt.get('value')}" for opt in params_list)
+
+            await self.log_action(
+                guild.id,
+                "command",
+                user=interaction.user,
+                command=command.qualified_name,
+                details=f"Parameters: {params}"
+            )
+        except Exception:
+            pass
+
+    @commands.Cog.listener()
+    async def on_app_command_error(self, interaction: discord.Interaction, error):
+        try:
+            guild = interaction.guild
+            if not guild:
+                return
+
+            command_name = "unknown"
+            if hasattr(interaction, "command") and interaction.command:
+                command_name = interaction.command.qualified_name
+
+            params_list = interaction.data.get("options", []) if interaction.data else []
+            params = ", ".join(f"{opt['name']}={opt.get('value')}" for opt in params_list)
+
+            await self.log_action(
+                guild.id,
+                "command",
+                user=interaction.user,
+                command=command_name,
+                details=f"Parameters: {params}\nError: {error}"
+            )
+        except Exception:
+            pass
 
 async def setup(bot):
     cog = ModLog(bot)

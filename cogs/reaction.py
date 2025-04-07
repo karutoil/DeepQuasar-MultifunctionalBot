@@ -4,6 +4,11 @@ from discord import app_commands
 from db.reaction_db import ReactionRolesDB
 
 class ReactionRoles(commands.Cog):
+    reaction_group = app_commands.Group(
+        name="reactionroles",
+        description="Manage reaction role messages"
+    )
+
     def __init__(self, bot):
         self.bot = bot
         self.db = ReactionRolesDB()
@@ -83,14 +88,16 @@ class ReactionRoles(commands.Cog):
 
         return message
 
-    @app_commands.command(name="createreactionroles", description="Start creating a reaction role message")
-    @app_commands.default_permissions(administrator=True)
+    @reaction_group.command(name="create", description="Start creating a reaction role message")
     @app_commands.describe(
         title="The title for the reaction role message",
         color="The embed color in hex (e.g. #FF0000)"
     )
     async def create_reaction_roles(self, interaction: discord.Interaction, title: str, color: str = "#3498db"):
-        """Initialize a new reaction role message"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         try:
             color = int(color.lstrip("#"), 16)
         except:
@@ -99,22 +106,24 @@ class ReactionRoles(commands.Cog):
         self.pending_messages[interaction.channel.id] = (title, color, {})
         await interaction.response.send_message(
             f"Now creating reaction role message: **{title}**\n"
-            "Use `/addreactionrole` to add roles to this message.",
+            "Use `/reactionroles add` to add roles to this message.",
             ephemeral=True
         )
 
-    @app_commands.command(name="addreactionrole", description="Add a role to the current reaction role message")
-    @app_commands.default_permissions(administrator=True)
+    @reaction_group.command(name="add", description="Add a role to the current reaction role message")
     @app_commands.describe(
         emoji="The emoji to use",
         role="The role to assign",
         description="Optional description for this role"
     )
     async def add_reaction_role(self, interaction: discord.Interaction, emoji: str, role: discord.Role, description: str = None):
-        """Add a reaction role to the pending message"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if interaction.channel.id not in self.pending_messages:
             return await interaction.response.send_message(
-                "No reaction role message in progress. Use `/createreactionroles` first.",
+                "No reaction role message in progress. Use `/reactionroles create` first.",
                 ephemeral=True
             )
 
@@ -140,13 +149,15 @@ class ReactionRoles(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.command(name="finishreactionroles", description="Post the reaction role message")
-    @app_commands.default_permissions(administrator=True)
+    @reaction_group.command(name="finish", description="Post the reaction role message")
     async def finish_reaction_roles(self, interaction: discord.Interaction):
-        """Post the completed reaction role message"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         if interaction.channel.id not in self.pending_messages:
             return await interaction.response.send_message(
-                "No reaction role message in progress. Use `/createreactionroles` first.",
+                "No reaction role message in progress. Use `/reactionroles create` first.",
                 ephemeral=True
             )
 
@@ -208,11 +219,13 @@ class ReactionRoles(commands.Cog):
             ephemeral=True
         )
 
-    @app_commands.command(name="editreactionroles", description="Add more roles to an existing reaction role message")
-    @app_commands.default_permissions(administrator=True)
+    @reaction_group.command(name="edit", description="Add more roles to an existing reaction role message")
     @app_commands.describe(message_id="The ID of the message to edit")
     async def edit_reaction_roles(self, interaction: discord.Interaction, message_id: str):
-        """Edit an existing reaction role message"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         try:
             message_id = int(message_id)
         except:
@@ -253,16 +266,18 @@ class ReactionRoles(commands.Cog):
 
         await interaction.response.send_message(
             f"Now editing reaction role message: **{title}**\n"
-            "Use `/addreactionrole` to add more roles to this message.\n"
-            "Use `/finishreactionroles` to save changes.",
+            "Use `/reactionroles add` to add more roles to this message.\n"
+            "Use `/reactionroles finish` to save changes.",
             ephemeral=True
         )
 
-    @app_commands.command(name="removereactionrole", description="Remove a reaction role from a message")
-    @app_commands.default_permissions(administrator=True)
+    @reaction_group.command(name="remove", description="Remove a reaction role from a message")
     @app_commands.describe(message_id="The ID of the reaction role message", emoji="The emoji to remove")
     async def remove_reaction_role(self, interaction: discord.Interaction, message_id: str, emoji: str):
-        """Remove a reaction role from a message"""
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+
         try:
             message_id = int(message_id)
         except:
