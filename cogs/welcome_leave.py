@@ -14,6 +14,9 @@ class WelcomeLeave(commands.Cog):
         self.bot = bot
         self.db = WelcomeLeaveDB()
 
+    def cog_unload(self):
+        pass
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         welcome_channel_id, _ = self.db.get_channels(member.guild.id)

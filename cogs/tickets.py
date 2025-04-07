@@ -15,6 +15,9 @@ class Tickets(commands.Cog):
         self.bot = bot
         self.db = TicketDB()
 
+    def cog_unload(self):
+        pass
+
     async def send_log(self, guild, message):
         s = self.db.get_guild_settings(guild.id)
         if not s:

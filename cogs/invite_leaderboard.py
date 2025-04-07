@@ -11,6 +11,9 @@ class InviteLeaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def cog_unload(self):
+        pass
+
     @invites_group.command(name="leaderboard", description="Show the top invites leaderboard.")
     async def invite_leaderboard(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)

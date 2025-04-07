@@ -43,6 +43,9 @@ class ModLog(commands.Cog):
         # Initialize per-guild settings cache
         self.guild_settings = {}
 
+    def cog_unload(self):
+        pass
+
     async def load_guild_settings(self, guild_id: int):
         """Load settings from database or use defaults"""
         settings = self.db.get_guild_settings(guild_id)

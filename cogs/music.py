@@ -98,9 +98,21 @@ class Music(commands.Cog):
         return False
 
     def cog_unload(self):
+        # Disconnect all voice clients
+        for vc in self.bot.voice_clients:
+            try:
+                if vc.is_playing():
+                    vc.stop()
+                asyncio.create_task(vc.disconnect())
+            except Exception:
+                pass
+
+        # Close database
         self.conn.close()
+
         # Close aiohttp session
         asyncio.create_task(self.session.close())
+
         # Reset autoplay and looping on unload
         self.looping.clear()
         if hasattr(self, 'autoplay'):

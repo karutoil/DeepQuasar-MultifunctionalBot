@@ -11,6 +11,9 @@ class Cleanup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    def cog_unload(self):
+        pass
+
     @cleanup_group.command(name="messages", description="Delete the last X messages in this channel.")
     async def cleanup(self, interaction: discord.Interaction, amount: int):
         if not interaction.user.guild_permissions.manage_messages:
