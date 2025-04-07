@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import aiohttp
 import json
+import random
 from db.localai_db import LocalAIDB
 from typing import Optional, List
 
@@ -73,15 +74,36 @@ class LocalAI(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         """Handle message events for AI responses"""
-        if (message.author.bot or 
-            not message.guild or 
-            not isinstance(message.channel, discord.TextChannel)):
+        if (
+            message.author.bot or
+            not message.guild or
+            not isinstance(message.channel, discord.TextChannel)
+        ):
             return
 
-        # Check if bot is mentioned or channel is whitelisted
-        should_respond = (self.is_mentioned(message) or 
-                         self.db.is_whitelisted(message.guild.id, message.channel.id))
-        
+        # Always respond if bot is mentioned
+        mentioned = self.is_mentioned(message)
+
+        # Always respond if replying to the bot
+        is_reply_to_bot = False
+        if message.reference and isinstance(message.reference.resolved, discord.Message):
+            replied_message = message.reference.resolved
+            if replied_message.author.id == self.bot.user.id:
+                is_reply_to_bot = True
+
+        # Check whitelist
+        whitelisted = self.db.is_whitelisted(message.guild.id, message.channel.id)
+
+        # Decide if should respond
+        should_respond = False
+        if mentioned or is_reply_to_bot:
+            should_respond = True
+        elif whitelisted:
+            chance = self.db.get_response_chance(message.guild.id)
+            roll = random.uniform(0, 100)
+            if roll <= chance:
+                should_respond = True
+
         if not should_respond:
             return
 
@@ -99,8 +121,6 @@ class LocalAI(commands.Cog):
                 # Truncate if needed
                 if len(response) > 2000:
                     response = response[:1997] + "..."
-                
-                # Reply to the message
                 await message.reply(response, mention_author=False)
 
     @chatbot_group.command(name="configure", description="Configure your local AI endpoint")
@@ -227,6 +247,35 @@ class LocalAI(commands.Cog):
             color=0x7289da
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @chatbot_group.command(name="chance", description="Set AI response chance percentage (0-100)")
+    @app_commands.describe(
+        chance="Chance percentage (0-100). 100 means always respond in whitelisted channels."
+    )
+    async def set_response_chance(
+        self,
+        interaction: discord.Interaction,
+        chance: float
+    ):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.",
+                ephemeral=True
+            )
+            return
+
+        if chance < 0 or chance > 100:
+            await interaction.response.send_message(
+                "Chance must be between 0 and 100.",
+                ephemeral=True
+            )
+            return
+
+        self.db.set_response_chance(interaction.guild.id, chance)
+        await interaction.response.send_message(
+            f"AI response chance set to {chance}%.",
+            ephemeral=True
+        )
 
 async def setup(bot):
     await bot.add_cog(LocalAI(bot))

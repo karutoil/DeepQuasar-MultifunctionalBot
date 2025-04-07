@@ -5,6 +5,10 @@ import yt_dlp
 import asyncio
 from collections import deque
 import sqlite3
+import aiohttp
+from urllib.parse import quote
+from youtubesearchpython import VideosSearch
+from ytmusicapi import YTMusic
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -16,6 +20,7 @@ ytdl_format_options = {
     'ignoreerrors': False,
     'logtostderr': False,
     'nocheckcertificate': True,
+    'cookiefile': 'lavalink/youtube_cookies.txt',
     'http_headers': {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -27,6 +32,9 @@ ffmpeg_options = {
 }
 
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+
+# Separate fast metadata-only extractor for quick search
+fast_ytdl = yt_dlp.YoutubeDL({**ytdl_format_options, 'extract_flat': True})
 
 
 class YTDLSource(discord.PCMVolumeTransformer):
@@ -53,6 +61,8 @@ class Music(commands.Cog):
         self.queues = {}
         self.looping = {}  # guild_id: bool
         self.history = {}  # guild_id: deque of (title, url)
+        self.session = aiohttp.ClientSession()
+        self.ytmusic = YTMusic()
 
         # Initialize database
         self.conn = sqlite3.connect('data/musicbot.db')
@@ -89,6 +99,8 @@ class Music(commands.Cog):
 
     def cog_unload(self):
         self.conn.close()
+        # Close aiohttp session
+        asyncio.create_task(self.session.close())
         # Reset autoplay and looping on unload
         self.looping.clear()
         if hasattr(self, 'autoplay'):
@@ -211,7 +223,14 @@ class Music(commands.Cog):
         hist.appendleft((title, url))
 
         try:
-            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            # Perform full extraction just before playback for faster queuing
+            data = await asyncio.to_thread(ytdl.extract_info, url, download=False)
+            if 'entries' in data:
+                data = data['entries'][0]
+            player = YTDLSource(
+                discord.FFmpegPCMAudio(data['url'], **ffmpeg_options),
+                data=data
+            )
             # Set saved volume
             saved_volume = self.get_volume(interaction.guild.id)
             player.volume = saved_volume
@@ -219,7 +238,7 @@ class Music(commands.Cog):
             vc = interaction.guild.voice_client
             vc.play(player, after=lambda e: asyncio.run_coroutine_threadsafe(self.play_next(interaction), self.bot.loop))
 
-            embed = discord.Embed(title="🎵 Now Playing", description=f"**{title}**", color=discord.Color.green())
+            embed = discord.Embed(title="🎵 Now Playing", description=f"**{data.get('title', title)}**", color=discord.Color.green())
             await interaction.followup.send(embed=embed)
         except Exception as e:
             embed = discord.Embed(title="❌ Error", description=f"Error playing song: {e}", color=discord.Color.red())
@@ -245,10 +264,7 @@ class Music(commands.Cog):
     async def play(self, interaction: discord.Interaction, query: str):
         await interaction.response.defer()
 
-        if not query:
-            await interaction.followup.send("You must provide a search query or URL.", ephemeral=True)
-            return
-
+        # Connect to voice ASAP to overlap latency
         if not interaction.user.voice or not interaction.user.voice.channel:
             await interaction.followup.send("You are not connected to a voice channel.", ephemeral=True)
             return
@@ -256,24 +272,54 @@ class Music(commands.Cog):
         if not interaction.guild.voice_client:
             await interaction.user.voice.channel.connect()
 
+        if not query:
+            await interaction.followup.send("You must provide a search query or URL.", ephemeral=True)
+            return
+
         # If not URL, treat as search
         if not query.startswith(('http://', 'https://')):
-            query = f"ytsearch:{query}"
+            try:
+                search_url = f"https://yewtu.be/search?q={quote(query)}"
+                async with self.session.get(search_url, ssl=False, headers={"User-Agent": "Mozilla/5.0"}) as resp:
+                    if resp.status != 200:
+                        await interaction.followup.send("Invidious search failed.", ephemeral=True)
+                        return
+                    html = await resp.text()
+                    import re
+                    matches = re.findall(r'/watch\?v=[\w-]+', html)
+                    if not matches:
+                        # Fallback to yt-dlp search
+                        try:
+                            data = await asyncio.to_thread(ytdl.extract_info, f"ytsearch:{query}", download=False)
+                            if 'entries' in data and data['entries']:
+                                first = data['entries'][0]
+                                url = first.get('webpage_url')
+                                title = first.get('title', query)
+                            else:
+                                await interaction.followup.send("No results found.", ephemeral=True)
+                                return
+                        except Exception as e:
+                            await interaction.followup.send(f"Search error: {e}", ephemeral=True)
+                            return
+                    else:
+                        # Deduplicate matches
+                        seen = set()
+                        unique_matches = []
+                        for m in matches:
+                            if m not in seen:
+                                seen.add(m)
+                                unique_matches.append(m)
+                        video_path = unique_matches[0]
+                        url = "https://www.youtube.com" + video_path
+                        title = query  # Placeholder, will update after extraction
+            except Exception as e:
+                await interaction.followup.send(f"Search error: {e}", ephemeral=True)
+                return
+        else:
+            url = query
+            title = query  # Will be updated after extraction
 
         try:
-            data = await asyncio.to_thread(ytdl.extract_info, query, download=False)
-            if 'entries' in data:
-                entries = data['entries']
-                if not entries:
-                    await interaction.followup.send("No results found.", ephemeral=True)
-                    return
-                first = entries[0]
-                url = first['webpage_url']
-                title = first.get('title', 'Unknown title')
-            else:
-                url = data['webpage_url']
-                title = data.get('title', 'Unknown title')
-
             queue = self.get_queue(interaction.guild.id)
             queue.append((url, title))
 
@@ -519,4 +565,13 @@ class Music(commands.Cog):
 
 
 async def setup(bot):
+    # Warm up yt_dlp to reduce first extraction latency
+    async def warmup():
+        try:
+            # Use a very fast flat extraction on a popular video
+            await asyncio.to_thread(fast_ytdl.extract_info, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", download=False)
+        except Exception:
+            pass  # Ignore errors during warmup
+
+    bot.loop.create_task(warmup())
     await bot.add_cog(Music(bot))

@@ -19,19 +19,28 @@ class LocalAIDB:
                 enabled BOOLEAN DEFAULT FALSE,
                 temperature REAL DEFAULT 0.7,
                 max_tokens INTEGER DEFAULT 1000,
-                system_prompt TEXT DEFAULT "You are a helpful assistant"
+                system_prompt TEXT DEFAULT "You are a helpful assistant",
+                response_chance REAL DEFAULT 100
             )
         ''')
 
-        # Check if we need to migrate older versions
+        # Check existing columns for migrations
         self.cursor.execute("PRAGMA table_info(ai_config)")
         columns = [column[1] for column in self.cursor.fetchall()]
+
         if 'system_prompt' not in columns:
             try:
                 self.cursor.execute('ALTER TABLE ai_config ADD COLUMN system_prompt TEXT DEFAULT "You are a helpful assistant"')
                 self.conn.commit()
             except sqlite3.OperationalError as e:
-                print(f"Database migration error: {e}")
+                print(f"Database migration error (system_prompt): {e}")
+
+        if 'response_chance' not in columns:
+            try:
+                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN response_chance REAL DEFAULT 100')
+                self.conn.commit()
+            except sqlite3.OperationalError as e:
+                print(f"Database migration error (response_chance): {e}")
 
         # Whitelisted channels
         self.cursor.execute('''
@@ -55,12 +64,11 @@ class LocalAIDB:
     def get_config(self, guild_id: int) -> Optional[Dict]:
         """Get current configuration"""
         self.cursor.execute('''
-            SELECT api_base, api_key, model_name, enabled, temperature, max_tokens 
+            SELECT api_base, api_key, model_name, enabled, temperature, max_tokens, system_prompt, response_chance
             FROM ai_config WHERE guild_id = ?
         ''', (guild_id,))
         result = self.cursor.fetchone()
         if result:
-            system_prompt = result[6] if len(result) > 6 else None
             return {
                 'api_base': result[0],
                 'api_key': result[1],
@@ -68,23 +76,21 @@ class LocalAIDB:
                 'enabled': bool(result[3]),
                 'temperature': result[4],
                 'max_tokens': result[5],
-                'system_prompt': system_prompt
+                'system_prompt': result[6] if len(result) > 6 else None,
+                'response_chance': result[7] if len(result) > 7 and result[7] is not None else 100.0
             }
         return None
 
     def set_enabled(self, guild_id: int, enabled: bool):
         """Toggle AI functionality"""
-        # First check if config exists
         self.cursor.execute('SELECT 1 FROM ai_config WHERE guild_id = ?', (guild_id,))
         if not self.cursor.fetchone():
-            # Create basic config if none exists
             self.cursor.execute('''
                 INSERT INTO ai_config 
                 (guild_id, enabled, api_base, model_name)
                 VALUES (?, ?, ?, ?)
             ''', (guild_id, enabled, 'http://localhost:1234', 'fusechat-llama-3.2-3b-instruct'))
         else:
-            # Update existing config
             self.cursor.execute('''
                 UPDATE ai_config 
                 SET enabled = ?
@@ -141,6 +147,25 @@ class LocalAIDB:
         ''', (guild_id,))
         result = self.cursor.fetchone()
         return result[0] if result and result[0] else None
+
+    def set_response_chance(self, guild_id: int, chance: float):
+        """Set the AI response chance percentage (0-100)"""
+        self.cursor.execute('''
+            UPDATE ai_config
+            SET response_chance = ?
+            WHERE guild_id = ?
+        ''', (chance, guild_id))
+        self.conn.commit()
+
+    def get_response_chance(self, guild_id: int) -> float:
+        """Get the AI response chance percentage (0-100), defaults to 100"""
+        self.cursor.execute('''
+            SELECT response_chance FROM ai_config WHERE guild_id = ?
+        ''', (guild_id,))
+        result = self.cursor.fetchone()
+        if result and result[0] is not None:
+            return result[0]
+        return 100.0
 
     def close(self):
         self.conn.close()
