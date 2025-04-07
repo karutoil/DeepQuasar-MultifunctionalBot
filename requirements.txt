@@ -4,3 +4,4 @@ aiohttp
 yt-dlp
 pynacl
 youtube-search-python
+ytmusicapi
