@@ -162,8 +162,22 @@ class Music(commands.Cog):
                 # Use last played song as seed
                 hist = self.history.get(interaction.guild.id, deque())
                 if hist:
-                    last_title, _ = hist[0]
-                    query = f"ytsearch:{last_title}"
+                    last_title, last_url = hist[0]
+                    # Initialize before try-except
+                    use_artist = False
+                    # Try to get artist if history is still small
+                    if len(hist) < 100:
+                        try:
+                            # Extract info again to get artist
+                            data = await asyncio.to_thread(ytdl.extract_info, last_url, download=False)
+                            artist = data.get('artist') or data.get('uploader') or data.get('channel')
+                            if artist:
+                                query = f"ytsearch:{artist}"
+                                use_artist = True
+                        except:
+                            pass
+                    if not use_artist:
+                        query = f"ytsearch:{last_title}"
                     try:
                         data = await asyncio.to_thread(ytdl.extract_info, query, download=False)
                         if 'entries' in data and data['entries']:

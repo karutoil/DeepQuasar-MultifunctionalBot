@@ -1,156 +1,171 @@
-# MusicBot
+# DeepQuasar Multi-Functional Discord Bot
 
-A Discord bot with music, moderation, and utility features.
+A powerful Discord bot featuring music playback, moderation, ticketing, AI chat, reaction roles, embeds, and more.
 
-## Setup Instructions
+---
 
-1. **Clone the repository**
+## How to Use
 
-```bash
-git clone <your-repo-url>
-cd MusicBot
-```
+The recommended way to run this bot is via Docker. No manual setup or dependencies required.
 
-2. **Create and activate a virtual environment (optional but recommended)**
+**Docker Hub Repository:**  
+[https://hub.docker.com/r/karutoil/deepquasar-multifunctionalbot](https://hub.docker.com/r/karutoil/deepquasar-multifunctionalbot)
 
-On **Windows**:
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+### Quick Start with Docker Compose
 
-On **macOS/Linux**:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-3. **Install dependencies**
-
-```bash
-pip install -r requirements.txt
-```
-
-4. **Configure environment variables**
-
-Create a `.env` file in the project root with your Discord bot token:
+1. Create a `.env` file with your Discord bot token and any other environment variables:
 
 ```
 DISCORD_TOKEN=your-bot-token-here
 ```
 
-## Running the Bot
+2. Use the provided `docker-compose.yml` or create your own:
 
-```bash
-python main.py
+```yaml
+version: '3'
+services:
+  bot:
+    image: karutoil/deepquasar-multifunctionalbot:latest
+    env_file: .env
 ```
 
-## Notes
-
-- Do **NOT** share your `.env` file or bot token publicly.
-- The `.env` file is excluded from git via `.gitignore`.
-- Make sure your bot has the necessary permissions and intents enabled in the Discord Developer Portal.
-
-## Additional Dependencies
-
-The music features require [**FFmpeg**](https://ffmpeg.org/) to be installed on your system.
-
-### Windows
-- Download the latest static build from [https://www.gyan.dev/ffmpeg/builds/](https://www.gyan.dev/ffmpeg/builds/)
-- Extract the zip file
-- Add the `bin` folder path (containing `ffmpeg.exe`) to your **System PATH** environment variable
-
-### macOS
-```bash
-brew install ffmpeg
-```
-
-### Linux (Debian/Ubuntu)
-```bash
-sudo apt update
-sudo apt install ffmpeg
-```
-
-## Docker Usage
-
-### Build Docker Image
+3. Start the bot:
 
 ```bash
-docker build -t musicbot .
+docker-compose up -d
 ```
 
-### Run Docker Container
-
-```bash
-docker run --name musicbot-container --env-file .env musicbot
-```
-
-### Using Docker Compose
-
-You can also use Docker Compose to build and run the bot easily.
-
-```bash
-docker-compose up --build
-```
-
-This will:
-- Build the Docker image
-- Start the container named `musicbot-container`
-- Load environment variables from your `.env` file
-
-To stop the bot:
-
-```bash
-docker-compose down
-```
-
-**Note:** Make sure your `.env` file is present in the project root before running Docker or Docker Compose.
+---
 
 ## Bot Commands
 
-### User Commands
+### 🎵 Music
 
 | Command | Description |
 |---------|-------------|
-| `/join` | Joins the voice channel |
-| `/play <query>` | Plays a song from YouTube |
-| `/pause` | Pauses the current song |
-| `/resume` | Resumes the current song |
-| `/stop` | Stops the current song and clears the queue |
-| `/skip` | Skips the current song |
-| `/queue` | Shows the current queue |
-| `/nowplaying` | Shows the currently playing song |
-| `/volume <level>` | Adjust or view the player volume (0-200%) |
-| `/invite_leaderboard` | Show the top invites leaderboard |
-| `/listchannels` | List whitelisted AI channels |
-| `/autorole_status` | Check auto-role status |
+| `/join` | Join your voice channel |
+| `/play <query>` | Play a song from YouTube |
+| `/pause` | Pause playback |
+| `/resume` | Resume playback |
+| `/stop` | Stop playback and disconnect |
+| `/skip` | Skip the current song |
+| `/queue` | Show the current queue |
+| `/nowplaying` | Show the currently playing song |
+| `/volume [level]` | Set or show playback volume (0-200%) |
+| `/seek <seconds>` | Seek to a position in the current song |
+| `/move <from> <to>` | Move a song in the queue |
+| `/remove <position>` | Remove a song from the queue |
+| `/clear` | Clear the entire queue |
+| `/shuffle` | Shuffle the queue |
+| `/loop` | Toggle looping the current song |
+| `/replay` | Replay the current song |
+| `/history` | Show recently played songs |
+| `/setdj <role>` | Set the DJ role |
+| `/cleardj` | Clear the DJ role |
+| `/autoplay` | Toggle autoplay related songs |
 
-### Administrator / Moderator Commands
+---
+
+### 🎫 Ticket System
 
 | Command | Description |
 |---------|-------------|
-| `/setwelcomechannel` | Set the welcome message channel |
-| `/setleavechannel` | Set the leave message channel |
-| `/setticket` | Configure ticketing system |
-| `/createpanel` | Create a ticket panel |
-| `/createreactionroles` | Start creating a reaction role message |
-| `/addreactionrole` | Add a role to the current reaction role message |
-| `/finishreactionroles` | Post the reaction role message |
-| `/editreactionroles` | Add more roles to an existing reaction role message |
-| `/removereactionrole` | Remove a reaction role from a message |
-| `/setmodlog` | Set the moderation log channel |
-| `/togglemodlog` | Toggle specific moderation log events |
-| `/toggleallmodlog` | Toggle all moderation log events |
-| `/ailocal` | Configure local AI settings |
-| `/aiprompt` | Set AI prompt |
-| `/toggleai` | Enable or disable AI features |
-| `/aichannel` | Set AI channel |
-| `/embedcreate` | Create an embed message |
-| `/embededit` | Edit an existing embed message |
-| `/embedget` | Get an embed message |
-| `/embedbuilder` | Interactively build an embed with buttons |
-| `/cleanup` | Delete the last X messages in this channel |
-| `/cleanup_all` | Delete all messages in this channel |
-| `/cleanup_user` | Delete a number of messages from a specific user |
-| `/set_autorole` | Set role for new members |
-| `/remove_autorole` | Remove auto-role |
+| `/tickets setup` | Configure ticket system categories, roles, logs |
+| `/tickets panel` | Send the ticket creation panel |
+
+---
+
+### 🎭 Reaction Roles
+
+| Command | Description |
+|---------|-------------|
+| `/reaction create` | Start creating a reaction role message |
+| `/reaction add` | Add a role to the current reaction role message |
+| `/reaction finish` | Post the reaction role message |
+| `/reaction edit` | Add more roles to an existing reaction role message |
+| `/reaction remove` | Remove a reaction role from a message |
+
+---
+
+### 👋 Welcome & Leave
+
+| Command | Description |
+|---------|-------------|
+| `/welcome setwelcome` | Set the welcome message channel |
+| `/welcome setleave` | Set the leave message channel |
+
+---
+
+### 🛡️ Moderation & Logging
+
+| Command | Description |
+|---------|-------------|
+| `/modlog setchannel` | Set the moderation log channel |
+| `/modlog toggle <event>` | Enable or disable a specific log event |
+| `/modlog toggleall` | Enable or disable all moderation log events |
+
+---
+
+### 🤖 AI Chatbot
+
+| Command | Description |
+|---------|-------------|
+| `/chatbot configure` | Configure your local AI endpoint |
+| `/chatbot prompt` | Set a custom system prompt |
+| `/chatbot toggle` | Enable or disable AI responses |
+| `/chatbot channel` | Add or remove a whitelisted channel |
+| `/chatbot listchannels` | List all whitelisted channels |
+
+---
+
+### 📝 Embed Creator
+
+| Command | Description |
+|---------|-------------|
+| `/embed create` | Create an embed message |
+| `/embed edit` | Edit an existing embed message |
+| `/embed get` | Get an embed message as JSON |
+| `/embed builder` | Interactively build an embed with buttons |
+
+---
+
+### 🧹 Cleanup
+
+| Command | Description |
+|---------|-------------|
+| `/cleanup messages <amount>` | Delete the last X messages in this channel |
+| `/cleanup all` | Delete all messages in this channel |
+| `/cleanup user <user> <amount>` | Delete a number of messages from a specific user |
+
+---
+
+### 👥 Auto Role
+
+| Command | Description |
+|---------|-------------|
+| `/autorole set <role>` | Set role for new members |
+| `/autorole remove` | Remove auto-role |
+| `/autorole status` | Check auto-role status |
+
+---
+
+### 🏆 Invites
+
+| Command | Description |
+|---------|-------------|
+| `/invites leaderboard` | Show the top invites leaderboard |
+
+---
+
+### 🛠️ Utilities
+
+| Command | Description |
+|---------|-------------|
+| `/about` | Learn more about this bot's creators |
+| `/list_cogs` | List all currently loaded cogs |
+
+---
+
+## License
+
+This project is licensed under the MIT License.
