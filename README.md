@@ -60,8 +60,8 @@ docker-compose up -d
 | `/loop` | Toggle looping the current song |
 | `/replay` | Replay the current song |
 | `/history` | Show recently played songs |
-| `/setdj <role>` | Set the DJ role |
-| `/cleardj` | Clear the DJ role |
+| `/setdj <role>` | Set the DJ role (Admin) |
+| `/cleardj` | Clear the DJ role (Admin) |
 | `/autoplay` | Toggle autoplay related songs |
 
 ---
@@ -70,8 +70,8 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/tickets setup` | Configure ticket system categories, roles, logs |
-| `/tickets panel` | Send the ticket creation panel |
+| `/tickets setup` | Configure ticket system categories, roles, logs (Admin) |
+| `/tickets panel` | Send the ticket creation panel (Admin) |
 
 ---
 
@@ -79,11 +79,11 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/reaction create` | Start creating a reaction role message |
-| `/reaction add` | Add a role to the current reaction role message |
-| `/reaction finish` | Post the reaction role message |
-| `/reaction edit` | Add more roles to an existing reaction role message |
-| `/reaction remove` | Remove a reaction role from a message |
+| `/reaction create` | Start creating a reaction role message (Manage Roles) |
+| `/reaction add` | Add a role to the current reaction role message (Manage Roles) |
+| `/reaction finish` | Post the reaction role message (Manage Roles) |
+| `/reaction edit` | Add more roles to an existing reaction role message (Manage Roles) |
+| `/reaction remove` | Remove a reaction role from a message (Manage Roles) |
 
 ---
 
@@ -91,8 +91,8 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/welcome setwelcome` | Set the welcome message channel |
-| `/welcome setleave` | Set the leave message channel |
+| `/welcome setwelcome` | Set the welcome message channel (Admin) |
+| `/welcome setleave` | Set the leave message channel (Admin) |
 
 ---
 
@@ -100,9 +100,9 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/modlog setchannel` | Set the moderation log channel |
-| `/modlog toggle <event>` | Enable or disable a specific log event |
-| `/modlog toggleall` | Enable or disable all moderation log events |
+| `/modlog setchannel` | Set the moderation log channel (Admin) |
+| `/modlog toggle <event>` | Enable or disable a specific log event (Admin) |
+| `/modlog toggleall` | Enable or disable all moderation log events (Admin) |
 
 ---
 
@@ -110,10 +110,10 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/chatbot configure` | Configure your local AI endpoint |
-| `/chatbot prompt` | Set a custom system prompt |
-| `/chatbot toggle` | Enable or disable AI responses |
-| `/chatbot channel` | Add or remove a whitelisted channel |
+| `/chatbot configure` | Configure your local AI endpoint (Admin) |
+| `/chatbot prompt` | Set a custom system prompt (Admin) |
+| `/chatbot toggle` | Enable or disable AI responses (Admin) |
+| `/chatbot channel` | Add or remove a whitelisted channel (Admin) |
 | `/chatbot listchannels` | List all whitelisted channels |
 
 ---
@@ -122,10 +122,10 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/embed create` | Create an embed message |
-| `/embed edit` | Edit an existing embed message |
+| `/embed create` | Create an embed message (Manage Messages) |
+| `/embed edit` | Edit an existing embed message (Manage Messages) |
 | `/embed get` | Get an embed message as JSON |
-| `/embed builder` | Interactively build an embed with buttons |
+| `/embed builder` | Interactively build an embed with buttons (Manage Messages) |
 
 ---
 
@@ -133,9 +133,9 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/cleanup messages <amount>` | Delete the last X messages in this channel |
-| `/cleanup all` | Delete all messages in this channel |
-| `/cleanup user <user> <amount>` | Delete a number of messages from a specific user |
+| `/cleanup messages <amount>` | Delete the last X messages in this channel (Manage Messages) |
+| `/cleanup all` | Delete all messages in this channel (Manage Messages) |
+| `/cleanup user <user> <amount>` | Delete a number of messages from a specific user (Manage Messages) |
 
 ---
 
@@ -143,9 +143,9 @@ docker-compose up -d
 
 | Command | Description |
 |---------|-------------|
-| `/autorole set <role>` | Set role for new members |
-| `/autorole remove` | Remove auto-role |
-| `/autorole status` | Check auto-role status |
+| `/autorole set <role>` | Set role for new members (Manage Roles) |
+| `/autorole remove` | Remove auto-role (Manage Roles) |
+| `/autorole status` | Check auto-role status (Manage Roles) |
 
 ---
 
