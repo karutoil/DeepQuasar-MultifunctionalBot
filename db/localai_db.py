@@ -43,7 +43,7 @@ class LocalAIDB:
 
         if 'api_base' not in columns:
             try:
-                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN api_base TEXT DEFAULT "http://192.168.0.12"')
+                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN api_base TEXT DEFAULT "http://192.168.0.12:1234"')
                 self.conn.commit()
             except sqlite3.OperationalError as e:
                 print(f"Database migration error (api_base): {e}")
