@@ -21,7 +21,7 @@ RUN pip install -r requirements.txt
 COPY . /app/
 
 # Expose any ports if necessary (Discord bots usually don't need this)
-# EXPOSE 8000
+# EXPOSE 800
 
 # Command to run the bot
 CMD ["python", "main.py"]
