@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-import wavelink
 import os
 from dotenv import load_dotenv
 
