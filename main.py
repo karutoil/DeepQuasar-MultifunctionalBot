@@ -86,6 +86,15 @@ async def on_ready():
     await bot.tree.sync()
     print("Commands synced!")
 
+    # Set watching status with server and member count
+    total_guilds = len(bot.guilds)
+    total_members = sum(g.member_count or 0 for g in bot.guilds)
+    activity_text = f"{total_guilds} servers | {total_members} members"
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=activity_text))
+
+    # Discord.py does not support updating bot bio programmatically.
+    # Please update the bot's bio manually in the Discord Developer Portal or Discord client.
+
 @bot.tree.command(name="about", description="Learn more about this bot's creators")
 async def about_command(interaction: discord.Interaction):
     embed = discord.Embed(
