@@ -9,13 +9,12 @@ class LocalAIDB:
 
     def _init_db(self):
         """Initialize database tables"""
-        # Main configuration
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS ai_config (
                 guild_id INTEGER PRIMARY KEY,
-                api_base TEXT NOT NULL,
-                api_key TEXT,
-                model_name TEXT DEFAULT 'local-model',
+                api_base TEXT DEFAULT 'http://192.168.0.12',
+                api_key TEXT DEFAULT 'lm-studio',
+                model_name TEXT DEFAULT 'fusechat-llama-3.2-3b-instruct',
                 enabled BOOLEAN DEFAULT FALSE,
                 temperature REAL DEFAULT 0.7,
                 max_tokens INTEGER DEFAULT 1000,
@@ -42,6 +41,27 @@ class LocalAIDB:
             except sqlite3.OperationalError as e:
                 print(f"Database migration error (response_chance): {e}")
 
+        if 'api_base' not in columns:
+            try:
+                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN api_base TEXT DEFAULT "http://192.168.0.12"')
+                self.conn.commit()
+            except sqlite3.OperationalError as e:
+                print(f"Database migration error (api_base): {e}")
+
+        if 'api_key' not in columns:
+            try:
+                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN api_key TEXT DEFAULT "lm-studio"')
+                self.conn.commit()
+            except sqlite3.OperationalError as e:
+                print(f"Database migration error (api_key): {e}")
+
+        if 'model_name' not in columns:
+            try:
+                self.cursor.execute('ALTER TABLE ai_config ADD COLUMN model_name TEXT DEFAULT "fusechat-llama-3.2-3b-instruct"')
+                self.conn.commit()
+            except sqlite3.OperationalError as e:
+                print(f"Database migration error (model_name): {e}")
+
         # Whitelisted channels
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS whitelisted_channels (
@@ -52,7 +72,7 @@ class LocalAIDB:
         ''')
         self.conn.commit()
 
-    def set_config(self, guild_id: int, api_base: str, api_key: Optional[str] = None, model_name: str = "local-model"):
+    def set_config(self, guild_id: int, api_base: str = 'http://192.168.0.12', api_key: Optional[str] = 'lm-studio', model_name: str = 'fusechat-llama-3.2-3b-instruct'):
         """Configure local AI endpoint"""
         self.cursor.execute('''
             INSERT OR REPLACE INTO ai_config 
@@ -70,13 +90,13 @@ class LocalAIDB:
         result = self.cursor.fetchone()
         if result:
             return {
-                'api_base': result[0],
-                'api_key': result[1],
-                'model_name': result[2],
+                'api_base': result[0] or 'http://192.168.0.12',
+                'api_key': result[1] or 'lm-studio',
+                'model_name': result[2] or 'fusechat-llama-3.2-3b-instruct',
                 'enabled': bool(result[3]),
                 'temperature': result[4],
                 'max_tokens': result[5],
-                'system_prompt': result[6] if len(result) > 6 else None,
+                'system_prompt': result[6] if len(result) > 6 else "You are a helpful assistant",
                 'response_chance': result[7] if len(result) > 7 and result[7] is not None else 100.0
             }
         return None
@@ -87,9 +107,9 @@ class LocalAIDB:
         if not self.cursor.fetchone():
             self.cursor.execute('''
                 INSERT INTO ai_config 
-                (guild_id, enabled, api_base, model_name)
-                VALUES (?, ?, ?, ?)
-            ''', (guild_id, enabled, 'http://localhost:1234', 'fusechat-llama-3.2-3b-instruct'))
+                (guild_id, enabled, api_base, api_key, model_name)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (guild_id, enabled, 'http://192.168.0.12', 'lm-studio', 'fusechat-llama-3.2-3b-instruct'))
         else:
             self.cursor.execute('''
                 UPDATE ai_config 
@@ -146,7 +166,7 @@ class LocalAIDB:
             SELECT system_prompt FROM ai_config WHERE guild_id = ?
         ''', (guild_id,))
         result = self.cursor.fetchone()
-        return result[0] if result and result[0] else None
+        return result[0] if result and result[0] else "You are a helpful assistant"
 
     def set_response_chance(self, guild_id: int, chance: float):
         """Set the AI response chance percentage (0-100)"""
