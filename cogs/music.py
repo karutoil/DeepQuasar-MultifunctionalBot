@@ -16,7 +16,7 @@ ytdl_format_options = {
     'no_warnings': True,
     'default_search': 'auto',
     'source_address': '0.0.0.0',
-    'noplaylist': True,
+    'noplaylist': False,  # Allow playlists
     'ignoreerrors': False,
     'logtostderr': False,
     'nocheckcertificate': True,
@@ -332,14 +332,34 @@ class Music(commands.Cog):
             title = query  # Will be updated after extraction
 
         try:
+            # Extract info to handle playlists and livestreams
+            data = await asyncio.to_thread(ytdl.extract_info, url, download=False)
+
             queue = self.get_queue(interaction.guild.id)
-            queue.append((url, title))
+
+            # Check if playlist
+            if 'entries' in data and isinstance(data['entries'], list):
+                entries = [entry for entry in data['entries'] if entry]  # filter out None entries
+                for entry in entries:
+                    entry_url = entry.get('webpage_url') or entry.get('url')
+                    entry_title = entry.get('title') or "Untitled"
+                    queue.append((entry_url, entry_title))
+                count = len(entries)
+                if count == 0:
+                    await interaction.followup.send("No valid videos found in the playlist.", ephemeral=True)
+                    return
+                else:
+                    await interaction.followup.send(f"🎵 Added **{count}** tracks from playlist to the queue.")
+            else:
+                # Single video or livestream
+                real_url = data.get('webpage_url') or data.get('url') or url
+                real_title = data.get('title') or title
+                queue.append((real_url, real_title))
+                await interaction.followup.send(f"🎵 Added **{real_title}** to the queue.")
 
             vc = interaction.guild.voice_client
             if not vc.is_playing() and not vc.is_paused():
                 await self.play_next(interaction)
-            else:
-                await interaction.followup.send(f"🎵 Added **{title}** to the queue.")
         except Exception as e:
             await interaction.followup.send(f"Error: {e}", ephemeral=True)
 
