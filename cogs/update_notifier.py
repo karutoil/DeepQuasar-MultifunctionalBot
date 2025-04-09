@@ -43,7 +43,10 @@ class UpdateNotifier(commands.Cog):
 
             if current_digest != latest_digest:
                 commit_summary, commits_behind = await self.get_commit_summary(current_digest, latest_digest)
-                await self.notify_owner(commits_behind, commit_summary)
+                if commits_behind > 0:
+                    await self.notify_owner(commits_behind, commit_summary)
+                else:
+                    print("[UpdateNotifier] No new commits. Skipping notification.")
             else:
                 print("[UpdateNotifier] Bot is up to date with the latest Docker image.")
         except Exception as e:
