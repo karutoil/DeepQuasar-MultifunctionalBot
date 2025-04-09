@@ -30,5 +30,7 @@ venv.bak/
 *.bat
 
 # Exclude text files (e.g., cookies)
+# Ignore all txt files except requirements.txt
 *.txt
+!requirements.txt
 lavalink/plugins/*
