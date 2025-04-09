@@ -52,14 +52,21 @@ class UpdateNotifier(commands.Cog):
     async def get_current_digest(self):
         """
         Retrieve the digest of the currently running Docker image.
-        Recommended: set an environment variable DOCKER_IMAGE_DIGEST during build/deployment.
+        If not set, fallback to commit SHA.
         """
         import os
         digest = os.getenv("DOCKER_IMAGE_DIGEST")
-        if not digest:
-            print("[UpdateNotifier] Environment variable DOCKER_IMAGE_DIGEST not set.")
-            return None
-        return digest
+        if digest:
+            return digest
+
+        print("[UpdateNotifier] Environment variable DOCKER_IMAGE_DIGEST not set. Falling back to commit SHA.")
+
+        commit_sha = os.getenv("GIT_COMMIT_SHA")
+        if commit_sha:
+            return commit_sha
+
+        print("[UpdateNotifier] GIT_COMMIT_SHA also not set. Cannot determine current version.")
+        return None
 
     async def get_latest_digest(self):
         """
