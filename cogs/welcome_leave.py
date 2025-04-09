@@ -12,7 +12,7 @@ class WelcomeLeave(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.db = WelcomeLeaveDB()
+        self.db = WelcomeLeaveDB("data/welcome_leave.db")
 
     def cog_unload(self):
         pass

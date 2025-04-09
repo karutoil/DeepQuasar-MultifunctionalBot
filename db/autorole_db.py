@@ -2,7 +2,7 @@ import sqlite3
 
 class AutoRoleDB:
     def __init__(self):
-        self.conn = sqlite3.connect('autorole.db')
+        self.conn = sqlite3.connect('data/autorole.db')
         self.cursor = self.conn.cursor()
         self._init_db()
 
