@@ -33,4 +33,8 @@ venv.bak/
 # Ignore all txt files except requirements.txt
 *.txt
 !requirements.txt
+
 lavalink/plugins/*
+
+
+MusicBotEnv/*
