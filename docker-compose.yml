@@ -8,3 +8,27 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    depends_on:
+      - lavalink
+    networks:
+      - musicnet
+
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: lavalink-container
+    environment:
+      - _JAVA_OPTIONS=-Xmx2G
+      - YOUTUBE_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
+    env_file: .env
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+      - ./lavalink/plugins:/opt/Lavalink/plugins
+    ports:
+      - "2333:2333"
+    restart: unless-stopped
+    networks:
+      - musicnet
+
+networks:
+  musicnet:
+    driver: bridge
