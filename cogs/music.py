@@ -4,6 +4,7 @@ from discord.ext import commands
 import wavelink
 import sqlite3
 import asyncio
+import os
 from collections import deque
 
 class MusicCog(commands.Cog):
@@ -39,9 +40,12 @@ class MusicCog(commands.Cog):
 
     async def connect_node(self):
         try:
+            lavalink_host = os.getenv('LAVALINK_HOST', 'localhost')
+            lavalink_port = os.getenv('LAVALINK_PORT', '2333')
+            lavalink_password = os.getenv('LAVALINK_PASSWORD', 'youshallnotpass')
             node = wavelink.Node(
-                uri='http://localhost:2333',
-                password='youshallnotpass',
+                uri=f'http://{lavalink_host}:{lavalink_port}',
+                password=lavalink_password,
                 identifier='default-node',
             )
             await wavelink.Pool.connect(nodes=[node], client=self.bot)

@@ -1,7 +1,7 @@
 server:
   port: 2333
   address: 0.0.0.0
-  password: youshallnotpass
+  password: ${LAVALINK_PASSWORD}
   sources:
     youtube: false  # Disable deprecated built-in YouTube extractor
     bandcamp: true
@@ -20,7 +20,7 @@ lavalink:
       repository: "https://maven.lavalink.dev/releases"
       snapshot: false
   server:
-    password: "youshallnotpass"
+    password: "${LAVALINK_PASSWORD}"
     sources:
       youtube: false
       bandcamp: true
