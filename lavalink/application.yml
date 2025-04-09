@@ -126,10 +126,10 @@ logging:
     max-size: 10MB
   level:
     root: INFO
-    lavalink: DEBUG
-    lavalink.server.io.SocketContext: TRACE
-    com.sedmelluq.discord.lavaplayer.tools.ExceptionTools: DEBUG
-    dev.lavalink.youtube: DEBUG
+    lavalink: INFO
+    lavalink.server.io.SocketContext: INFO
+    com.sedmelluq.discord.lavaplayer.tools.ExceptionTools: INFO
+    dev.lavalink.youtube: INFO
   request:
     enabled: true
     includeClientInfo: true
