@@ -102,17 +102,64 @@ class UpdateNotifier(commands.Cog):
 
     async def get_commit_summary(self, current_digest, latest_digest):
         """
-        Fetch commit summaries between current and latest digest SHAs.
-
-        NOTE: This requires embedding the commit SHA in the image during build,
-        and mapping digest -> commit SHA.
-
-        Placeholder implementation for now.
+        Fetch commit summaries between current and latest commit SHAs using GitHub API.
         """
-        # TODO: Implement actual GitHub API call using commit SHAs
-        summary = "Latest commits:\n- Commit A: Fix bug\n- Commit B: Add feature\n"
-        commits_behind = 2
-        return summary, commits_behind
+        import aiohttp
+        import os
+
+        # Use embedded commit SHAs (digest fallback)
+        current_sha = current_digest
+        latest_sha = None
+
+        # GitHub repo info
+        owner = "karutoil"
+        repo = "DeepQuasar-MultifunctionalBot"
+
+        headers = {}
+        token = UPDATE_NOTIFIER_CONFIG.get("github_api_token")
+        if token:
+            headers["Authorization"] = f"token {token}"
+
+        try:
+            async with aiohttp.ClientSession(headers=headers) as session:
+                # Get latest commit SHA on default branch
+                url_branch = f"https://api.github.com/repos/{owner}/{repo}/branches/main"
+                async with session.get(url_branch) as resp:
+                    if resp.status != 200:
+                        print(f"[UpdateNotifier] Failed to fetch latest commit SHA: {resp.status}")
+                        return "Could not fetch commit info.", 0
+                    data = await resp.json()
+                    latest_sha = data.get("commit", {}).get("sha")
+                    if not latest_sha:
+                        print("[UpdateNotifier] Latest commit SHA not found in branch info.")
+                        return "Could not fetch commit info.", 0
+
+                # Use GitHub compare API
+                url_compare = f"https://api.github.com/repos/{owner}/{repo}/compare/{current_sha}...{latest_sha}"
+                async with session.get(url_compare) as resp:
+                    if resp.status != 200:
+                        print(f"[UpdateNotifier] Failed to fetch commit comparison: {resp.status}")
+                        return "Could not fetch commit info.", 0
+                    data = await resp.json()
+                    commits = data.get("commits", [])
+                    commits_behind = len(commits)
+
+                    if commits_behind == 0:
+                        return "Up to date.", 0
+
+                    summary_lines = ["Latest commits:"]
+                    for commit in commits[-5:]:  # Show last 5 commits max
+                        sha_short = commit.get("sha", "")[:7]
+                        message = commit.get("commit", {}).get("message", "").split("\n")[0]
+                        author = commit.get("commit", {}).get("author", {}).get("name", "Unknown")
+                        summary_lines.append(f"- `{sha_short}` by **{author}**: {message}")
+
+                    summary = "\n".join(summary_lines)
+                    return summary, commits_behind
+
+        except Exception as e:
+            print(f"[UpdateNotifier] Error fetching commit summary: {e}")
+            return "Could not fetch commit info.", 0
 
     async def notify_owner(self, commits_behind, commit_summary):
         """
