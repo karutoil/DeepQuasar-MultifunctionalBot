@@ -13,15 +13,22 @@ The recommended way to run this bot is via Docker. No manual setup or dependenci
 
 ### Quick Start with Docker Compose
 
+#### ⚡️ MongoDB Requirement
+
+This bot now requires a running MongoDB instance. You must provide a valid MongoDB connection URI via the `MONGODB_URI` environment variable. The default Docker Compose setup will automatically provision a MongoDB container and set the correct URI.
+
+> **See: [MongoDB Setup & Migration Instructions](./mongodb_setup_instructions.md)**
+
 1. **Copy the provided `.env.example` file to `.env` and fill in your Discord bot token and any other environment variables:**
 
 ```
 cp .env.example .env
 # Then edit .env and set:
 # DISCORD_TOKEN=your-bot-token-here
+# MONGODB_URI=mongodb://mongodb:27017/musicbot
 ```
 
-2. **Use the included `docker-compose.yml` file in the repository.** It is pre-configured to run the bot container.
+2. **Use the included `docker-compose.yml` file in the repository.** It is pre-configured to run both the bot and MongoDB containers.
 
 3. **Start the bot with Docker Compose:**
 
@@ -29,7 +36,7 @@ cp .env.example .env
 docker-compose up -d
 ```
 
-This will pull the latest image, create the container, and start your bot automatically.
+This will pull the latest image, create the containers, and start your bot automatically.
 
 ---
 

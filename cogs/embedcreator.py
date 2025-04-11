@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-import json, sqlite3
+import json
+import pymongo
+import os
 from typing import Optional
 
 # --------- INTERACTIVE EMBED BUILDER VIEWS AND MODALS -----------
@@ -181,44 +183,44 @@ class EmbedCreator(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self._init_db()
-
-    def _init_db(self):
-        self.conn = sqlite3.connect('data/embedcreator.db')
-        self.cursor = self.conn.cursor()
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS embeds (
-                message_id INTEGER PRIMARY KEY,
-                channel_id INTEGER NOT NULL,
-                guild_id INTEGER NOT NULL,
-                embed_json TEXT NOT NULL,
-                author_id INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        self.conn.commit()
+        # MongoDB
+        mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self.client = pymongo.MongoClient(mongo_uri)
+        self.db = self.client["musicbot"]
+        self.embeds = self.db["embeds"]
 
     async def cog_unload(self):
-        self.conn.close()
+        self.client.close()
 
     async def store_embed(self, message_id, channel_id, guild_id, embed_json, author_id):
-        self.cursor.execute('''
-            INSERT INTO embeds (message_id, channel_id, guild_id, embed_json, author_id)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (message_id, channel_id, guild_id, embed_json, author_id))
-        self.conn.commit()
+        self.embeds.update_one(
+            {"message_id": message_id},
+            {"$set": {
+                "channel_id": channel_id,
+                "guild_id": guild_id,
+                "embed_json": embed_json,
+                "author_id": author_id
+            }},
+            upsert=True
+        )
 
     async def get_embed(self, message_id):
-        self.cursor.execute('SELECT channel_id, guild_id, embed_json, author_id FROM embeds WHERE message_id = ?', (message_id,))
-        r = self.cursor.fetchone()
-        if r:
-            return {'channel_id': r[0], 'guild_id': r[1], 'embed_json': r[2], 'author_id': r[3]}
+        doc = self.embeds.find_one({"message_id": message_id})
+        if doc:
+            return {
+                'channel_id': doc.get('channel_id'),
+                'guild_id': doc.get('guild_id'),
+                'embed_json': doc.get('embed_json'),
+                'author_id': doc.get('author_id')
+            }
         else:
             return None
 
     async def update_embed(self, message_id, new_json):
-        self.cursor.execute('UPDATE embeds SET embed_json=? WHERE message_id=?', (new_json, message_id))
-        self.conn.commit()
+        self.embeds.update_one(
+            {"message_id": message_id},
+            {"$set": {"embed_json": new_json}}
+        )
 
     async def parse_embed_json(self, json_str):
         try:

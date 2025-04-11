@@ -1,22 +1,17 @@
 import discord
 from discord.ext import commands
 import os
-import sqlite3
 from dotenv import load_dotenv
+import pymongo
 
-DB_PATH = "data/cog_state.db"
+# MongoDB setup
+MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+MONGO_DB = "musicbot"
+COG_STATE_COLLECTION = "cog_state"
 
-def init_cog_db():
-    """Create cog_state.db and table if missing"""
-    if not os.path.exists(DB_PATH):
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute('CREATE TABLE IF NOT EXISTS cogs (cog_name TEXT PRIMARY KEY, loaded INTEGER NOT NULL)')
-        conn.commit()
-        conn.close()
-
-init_cog_db()
+client = pymongo.MongoClient(MONGO_URI)
+db = client[MONGO_DB]
+cog_state_col = db[COG_STATE_COLLECTION]
 
 load_dotenv()
 
@@ -37,31 +32,27 @@ bot = commands.Bot(
 )
 
 def ensure_cog_record(cog_name):
-    """Ensure cog record exists in DB, default loaded=1"""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT OR IGNORE INTO cogs (cog_name, loaded) VALUES (?, ?)", (cog_name, 1))
-    conn.commit()
-    conn.close()
+    """Ensure cog record exists in MongoDB, default loaded=1"""
+    cog_state_col.update_one(
+        {"cog_name": cog_name},
+        {"$setOnInsert": {"loaded": 1}},
+        upsert=True
+    )
 
 def set_cog_loaded(cog_name, loaded: int):
-    """Update cog loaded state in DB"""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT OR REPLACE INTO cogs (cog_name, loaded) VALUES (?, ?)", (cog_name, loaded))
-    conn.commit()
-    conn.close()
+    """Update cog loaded state in MongoDB"""
+    cog_state_col.update_one(
+        {"cog_name": cog_name},
+        {"$set": {"loaded": loaded}},
+        upsert=True
+    )
 
 def is_cog_enabled(cog_name):
-    """Check if cog is enabled (loaded=1)"""
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT loaded FROM cogs WHERE cog_name = ?", (cog_name,))
-    row = c.fetchone()
-    conn.close()
-    if row is None:
+    """Check if cog is enabled (loaded=1) in MongoDB"""
+    doc = cog_state_col.find_one({"cog_name": cog_name})
+    if doc is None:
         return True  # default to enabled if not in DB
-    return bool(row[0])
+    return bool(doc.get("loaded", 1))
 
 async def load_cogs():
     """Load all cogs on startup based on DB state"""

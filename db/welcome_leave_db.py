@@ -1,41 +1,39 @@
-import sqlite3
+import pymongo
+import os
 from typing import Optional, Tuple
 
 class WelcomeLeaveDB:
     def __init__(self, db_path: str = "data/musicbot.db"):
-        self.conn = sqlite3.connect(db_path)
-        self.cursor = self.conn.cursor()
-        self._create_table()
+        # Connect to MongoDB using the URI from environment variables
+        mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self.client = pymongo.MongoClient(mongo_uri)
+        self.db = self.client["musicbot"]
+        self.settings = self.db["welcome_leave_settings"]
+        # Index can be created here if needed
+        # self.settings.create_index("guild_id", unique=True)
+        # No need for _create_table with MongoDB
 
-    def _create_table(self):
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS welcome_leave_settings (
-                guild_id INTEGER PRIMARY KEY,
-                welcome_channel_id INTEGER,
-                leave_channel_id INTEGER
-            )
-        ''')
-        self.conn.commit()
+    # MongoDB: No need for _create_table
 
     def set_welcome_channel(self, guild_id: int, channel_id: Optional[int]):
-        self.cursor.execute('''
-            INSERT OR REPLACE INTO welcome_leave_settings (guild_id, welcome_channel_id, leave_channel_id)
-            VALUES (?, ?, COALESCE((SELECT leave_channel_id FROM welcome_leave_settings WHERE guild_id = ?), NULL))
-        ''', (guild_id, channel_id, guild_id))
-        self.conn.commit()
+        """Set or update the welcome channel for a guild in MongoDB"""
+        self.settings.update_one(
+            {"guild_id": guild_id},
+            {"$set": {"welcome_channel_id": channel_id}},
+            upsert=True
+        )
 
     def set_leave_channel(self, guild_id: int, channel_id: Optional[int]):
-        self.cursor.execute('''
-            INSERT OR REPLACE INTO welcome_leave_settings (guild_id, welcome_channel_id, leave_channel_id)
-            VALUES (?, COALESCE((SELECT welcome_channel_id FROM welcome_leave_settings WHERE guild_id = ?), NULL), ?)
-        ''', (guild_id, guild_id, channel_id))
-        self.conn.commit()
+        """Set or update the leave channel for a guild in MongoDB"""
+        self.settings.update_one(
+            {"guild_id": guild_id},
+            {"$set": {"leave_channel_id": channel_id}},
+            upsert=True
+        )
 
     def get_channels(self, guild_id: int) -> Tuple[Optional[int], Optional[int]]:
-        self.cursor.execute('''
-            SELECT welcome_channel_id, leave_channel_id FROM welcome_leave_settings WHERE guild_id = ?
-        ''', (guild_id,))
-        result = self.cursor.fetchone()
-        if result:
-            return result[0], result[1]
+        """Get the welcome and leave channels for a guild from MongoDB"""
+        doc = self.settings.find_one({"guild_id": guild_id})
+        if doc:
+            return doc.get("welcome_channel_id"), doc.get("leave_channel_id")
         return None, None

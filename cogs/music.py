@@ -2,9 +2,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import wavelink
-import sqlite3
-import asyncio
+import pymongo
 import os
+import asyncio
 from collections import deque
 
 class MusicCog(commands.Cog):
@@ -16,41 +16,21 @@ class MusicCog(commands.Cog):
         self.bot = bot
         self.node_ready = False
 
-        # SQLite DB
-        self.conn = sqlite3.connect('data/musicbot.db')
-        self.cursor = self.conn.cursor()
-
-        # Create tables if not exist
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS volumes (
-                guild_id INTEGER PRIMARY KEY,
-                volume REAL NOT NULL
-            )
-        ''')
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS dj_roles (
-                guild_id INTEGER PRIMARY KEY,
-                role_id INTEGER
-            )
-        ''')
-        # New: bot_config table for persistent settings
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS bot_config (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            )
-        ''')
-        self.conn.commit()
+        # MongoDB
+        mongo_uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+        self.client = pymongo.MongoClient(mongo_uri)
+        self.db = self.client["musicbot"]
+        self.volumes = self.db["volumes"]
+        self.dj_roles = self.db["dj_roles"]
+        self.bot_config = self.db["bot_config"]
 
         # Load or generate unique node identifier
-        self.cursor.execute('SELECT value FROM bot_config WHERE key = ?', ('node_identifier',))
-        row = self.cursor.fetchone()
-        if row:
-            self.node_identifier = row[0]
+        config = self.bot_config.find_one({"key": "node_identifier"})
+        if config:
+            self.node_identifier = config["value"]
         else:
             self.node_identifier = str(uuid.uuid4())
-            self.cursor.execute('INSERT INTO bot_config (key, value) VALUES (?, ?)', ('node_identifier', self.node_identifier))
-            self.conn.commit()
+            self.bot_config.insert_one({"key": "node_identifier", "value": self.node_identifier})
 
         # In-memory state
         self.looping = {}    # guild_id: bool
@@ -121,10 +101,9 @@ class MusicCog(commands.Cog):
             pass
 
     def get_saved_volume(self, guild_id: int) -> float:
-        self.cursor.execute('SELECT volume FROM volumes WHERE guild_id = ?', (guild_id,))
-        row = self.cursor.fetchone()
-        if row:
-            return row[0]
+        doc = self.volumes.find_one({"guild_id": guild_id})
+        if doc and "volume" in doc:
+            return doc["volume"]
         return 1.0
 
     @commands.Cog.listener()
@@ -178,14 +157,13 @@ class MusicCog(commands.Cog):
         if interaction.user.guild_permissions.administrator:
             return True
 
-        # Check DJ role
-        self.cursor.execute('SELECT role_id FROM dj_roles WHERE guild_id = ?', (interaction.guild.id,))
-        row = self.cursor.fetchone()
-        if not row or not row[0]:
+        # Check DJ role in MongoDB
+        doc = self.dj_roles.find_one({"guild_id": interaction.guild.id})
+        if not doc or not doc.get("role_id"):
             # No DJ role set, allow all
             return True
 
-        dj_role = interaction.guild.get_role(row[0])
+        dj_role = interaction.guild.get_role(doc["role_id"])
         if dj_role and dj_role in interaction.user.roles:
             return True
 
@@ -531,10 +509,9 @@ class MusicCog(commands.Cog):
 
         # Always show saved volume if no argument
         if level is None:
-            self.cursor.execute('SELECT volume FROM volumes WHERE guild_id = ?', (guild_id,))
-            row = self.cursor.fetchone()
-            if row:
-                percent = int(row[0] * 100)
+            doc = self.volumes.find_one({"guild_id": guild_id})
+            if doc and "volume" in doc:
+                percent = int(doc["volume"] * 100)
             else:
                 percent = 100
             embed = discord.Embed(
@@ -557,14 +534,13 @@ class MusicCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        # Save to DB
+        # Save to MongoDB
         vol = level / 100
-        self.cursor.execute('''
-            INSERT INTO volumes (guild_id, volume)
-            VALUES (?, ?)
-            ON CONFLICT(guild_id) DO UPDATE SET volume=excluded.volume
-        ''', (guild_id, vol))
-        self.conn.commit()
+        self.volumes.update_one(
+            {"guild_id": guild_id},
+            {"$set": {"volume": vol}},
+            upsert=True
+        )
 
         # Set volume if connected
         vc = interaction.guild.voice_client
@@ -741,12 +717,11 @@ class MusicCog(commands.Cog):
             return
 
         guild_id = interaction.guild.id
-        self.cursor.execute('''
-            INSERT INTO dj_roles (guild_id, role_id)
-            VALUES (?, ?)
-            ON CONFLICT(guild_id) DO UPDATE SET role_id=excluded.role_id
-        ''', (guild_id, role.id))
-        self.conn.commit()
+        self.dj_roles.update_one(
+            {"guild_id": guild_id},
+            {"$set": {"role_id": role.id}},
+            upsert=True
+        )
         embed = discord.Embed(
             title="🎧 DJ Role Set",
             description=f"DJ role set to {role.mention}",
@@ -768,8 +743,7 @@ class MusicCog(commands.Cog):
             return
 
         guild_id = interaction.guild.id
-        self.cursor.execute('DELETE FROM dj_roles WHERE guild_id = ?', (guild_id,))
-        self.conn.commit()
+        self.dj_roles.delete_one({"guild_id": guild_id})
         embed = discord.Embed(
             title="🎧 DJ Role Cleared",
             description="DJ role has been cleared.",
