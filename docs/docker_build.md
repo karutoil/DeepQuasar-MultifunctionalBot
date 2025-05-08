@@ -14,7 +14,7 @@ This guide covers how to build and run DeepQuasar using Docker from the source c
    
    Either clone the repository:
    ```bash
-   git clone https://github.com/yourusername/DeepQuasar-MultifunctionalBot.git
+   git clone https://github.com/karutoil/DeepQuasar-MultifunctionalBot.git
    cd DeepQuasar-MultifunctionalBot
    ```
    
@@ -109,7 +109,7 @@ docker-compose up -d --build
 
 ## YouTube OAuth (Optional)
 
-If you want to enable YouTube OAuth for Lavalink (recommended for better YouTube playback), follow the [Lavalink YouTube OAuth Setup](../python/lavalink_oauth_setup.md) guide and modify your environment variables accordingly.
+If you want to enable YouTube OAuth for Lavalink (recommended for better YouTube playback), follow the [Lavalink YouTube OAuth Setup](./lavalink_oauth_setup.md) guide and modify your environment variables accordingly.
 
 ## Troubleshooting
 

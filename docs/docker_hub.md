@@ -61,31 +61,7 @@ This guide covers deploying DeepQuasar using the pre-built Docker image from Doc
 
 4. **Download Lavalink configuration:**
    ```bash
-   curl -o lavalink/application.yml https://raw.githubusercontent.com/yourusername/DeepQuasar-MultifunctionalBot/main/lavalink/application.yml
-   ```
-
-   Or create a new file `lavalink/application.yml` with the following content:
-   ```yaml
-   server:
-     port: 2333
-     address: 0.0.0.0
-   lavalink:
-     server:
-       password: "youshallnotpass"
-       sources:
-         youtube: true
-         bandcamp: true
-         soundcloud: true
-         twitch: true
-         vimeo: true
-         http: true
-         local: false
-       bufferDurationMs: 400
-       youtubePlaylistLoadLimit: 6
-       playerUpdateInterval: 5
-       youtubeSearchEnabled: true
-       soundcloudSearchEnabled: true
-       gc-warnings: true
+   curl -o lavalink/application.yml https://raw.githubusercontent.com/karutoil/DeepQuasar-MultifunctionalBot/main/lavalink/application.yml
    ```
 
 5. **Create your .env file:**
@@ -119,19 +95,9 @@ This guide covers deploying DeepQuasar using the pre-built Docker image from Doc
    docker-compose logs -f bot
    ```
 
-## Lavalink Plugins (Optional)
-
-For enhanced music functionality, you can add Lavalink plugins:
-
-```bash
-# Download the recommended plugins for better YouTube and SoundCloud support
-curl -L -o lavalink/plugins/lavasrc-plugin-4.5.0.jar https://github.com/topi314/LavaSrc/releases/download/4.5.0/lavasrc-plugin-4.5.0.jar
-curl -L -o lavalink/plugins/youtube-plugin-1.13.2.jar https://github.com/topi314/YouTube-Plugin/releases/download/1.13.2/youtube-plugin-1.13.2.jar
-```
-
 ## YouTube OAuth (Optional)
 
-For better YouTube integration, follow the [Lavalink YouTube OAuth Setup](../python/lavalink_oauth_setup.md) guide and add the refresh token to your `.env` file.
+For better YouTube integration, follow the [Lavalink YouTube OAuth Setup](./lavalink_oauth_setup.md) guide and add the refresh token to your `.env` file.
 
 ## Updating the Bot
 
