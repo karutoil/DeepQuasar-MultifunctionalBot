@@ -14,9 +14,12 @@ module.exports = {
             // Bot was disconnected from a voice channel
             const guildId = oldState.guild.id;
             
-            // Clean up music resources
-            client.musicManager.destroy(guildId);
-            console.log(`[Music] Cleaned up resources after bot disconnected from voice in guild ${guildId}`);
+            // Clean up music resources - get the player first and then destroy it
+            const player = client.musicManager.players.get(guildId);
+            if (player) {
+                await player.destroy();
+                console.log(`[Music] Cleaned up resources after bot disconnected from voice in guild ${guildId}`);
+            }
         }
         
         // Handle case where bot is the only one left in voice channel
@@ -37,7 +40,11 @@ module.exports = {
                     channel.members.first().id === client.user.id) {
                     
                     console.log(`[Music] Disconnecting bot from empty voice channel in guild ${guildId}`);
-                    client.musicManager.destroy(guildId);
+                    // Get the player first and then destroy it
+                    const player = client.musicManager.players.get(guildId);
+                    if (player) {
+                        player.destroy();
+                    }
                 }
             }, 2 * 60 * 1000); // 2 minutes
         }

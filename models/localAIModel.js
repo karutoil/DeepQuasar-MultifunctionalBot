@@ -1,5 +1,4 @@
 const database = require('./database');
-const db = database.db;
 
 /**
  * LocalAI model for interacting with local AI services
@@ -14,6 +13,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async setConfig(guildId, apiBase, apiKey = null, modelName = 'llama3') {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {
@@ -35,6 +35,7 @@ module.exports = {
      * @returns {Promise<Object|null>} - Config object or null
      */
     async getConfig(guildId) {
+        const db = database.getDb();
         return await db.collection('localAI').findOne({ guildId: guildId });
     },
 
@@ -45,6 +46,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async setSystemPrompt(guildId, systemPrompt) {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {
@@ -73,6 +75,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async setEnabled(guildId, enabled) {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {
@@ -101,6 +104,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async addWhitelistedChannel(guildId, channelId) {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {
@@ -119,6 +123,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async removeWhitelistedChannel(guildId, channelId) {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {
@@ -157,6 +162,7 @@ module.exports = {
      * @returns {Promise<void>}
      */
     async setResponseChance(guildId, chance) {
+        const db = database.getDb();
         await db.collection('localAI').updateOne(
             { guildId: guildId },
             {

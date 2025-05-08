@@ -20,7 +20,6 @@
     "lavalink-client": "^2.5.1",
     "mongodb": "^6.16.0",
     "mongoose": "^8.14.1",
-    "moonlink.js": "^4.2.2",
     "node-fetch": "^2.7.0",
     "shoukaku": "^4.1.1",
     "uuid": "^11.1.0"

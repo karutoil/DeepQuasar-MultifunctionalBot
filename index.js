@@ -43,7 +43,6 @@ client.musicManager = new LavalinkManager({
             authorization: process.env.LAVALINK_PASSWORD || "youshallnotpass",
             host: process.env.LAVALINK_HOST || "lavalink",
             port: parseInt(process.env.LAVALINK_PORT || "2333"),
-            id: "main",
             secure: process.env.LAVALINK_SECURE === "true"
         }
     ],
@@ -131,6 +130,59 @@ function initUpdateNotifier() {
     }
 }
 
+// Function to generate invite link
+async function generateInviteLink() {
+    try {
+        // Required permissions for the bot based on its functionality
+        const permissions = [
+            // General permissions
+            'ViewChannel',              // View channels
+            'SendMessages',             // Send messages
+            'EmbedLinks',               // Embed links (for rich embeds)
+            'ReadMessageHistory',       // Read message history (for reactions)
+            'UseExternalEmojis',        // Use external emojis
+            'AttachFiles',              // Attach files
+            'AddReactions',             // Add reactions
+            
+            // Moderation permissions
+            'ManageMessages',           // For cleanup commands
+            'ManageChannels',           // For ticket system
+            'ManageRoles',              // For autorole and reaction roles
+            
+            // Voice permissions
+            'Connect',                  // Connect to voice channels
+            'Speak',                    // Speak in voice channels
+            'UseVAD',                   // Use voice activity detection
+            'PrioritySpeaker',          // Priority speaker (for music)
+        ];
+        
+        // Create invite with formatted permissions
+        const { PermissionsBitField } = require('discord.js');
+        const permissionBits = new PermissionsBitField();
+        
+        // Add each permission
+        for (const permission of permissions) {
+            if (PermissionsBitField.Flags[permission]) {
+                permissionBits.add(PermissionsBitField.Flags[permission]);
+            }
+        }
+        
+        // Generate the invite URL
+        const inviteLink = `https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=${permissionBits.bitfield}&scope=bot%20applications.commands`;
+        
+        // Output the invite link
+        console.log('\n======== BOT INVITE LINK ========');
+        console.log(inviteLink);
+        console.log('=================================\n');
+        console.log('Use this link to add the bot to your server with the correct permissions.');
+        
+        return inviteLink;
+    } catch (error) {
+        console.error('Error generating invite link:', error);
+        return null;
+    }
+}
+
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}`);
@@ -150,12 +202,89 @@ client.once(Events.ClientReady, async () => {
         
         // Register commands with Discord API
         await registerSlashCommands();
+        
+        // Generate invite link with required permissions
+        await generateInviteLink();
     } catch (error) {
         console.error('Error loading commands or events:', error);
     }
     
     // Connect Lavalink manager
-    await client.musicManager.init(client.user.id);
+    try {
+        await client.musicManager.init(client.user.id);
+        
+        // Give a small delay for connections to establish
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Check if we successfully connected to at least one node
+        let hasConnectedNode = false;
+        
+        // Get all nodes
+        const nodes = Array.from(client.musicManager.nodeManager.nodes.values());
+        
+        // Debug log to see actual node states
+        console.log('[Lavalink] Node connection states:', nodes.map(node => ({
+            id: node.options.id || 'default',
+            connected: node.connected,
+            state: node.state
+        })));
+        
+        // Check if any node is connected
+        hasConnectedNode = nodes.some(node => node.connected || node.state === 'CONNECTED');
+        
+        if (!hasConnectedNode) {
+            console.warn('[Lavalink] No connected nodes found after initialization. Music functionality may not work.');
+            console.warn('[Lavalink] Will attempt to reconnect nodes when needed.');
+            
+            // Create a timer to periodically attempt reconnection
+            client.lavalinkReconnectInterval = setInterval(async () => {
+                try {
+                    let reconnected = false;
+                    for (const node of client.musicManager.nodeManager.nodes.values()) {
+                        if (!node.connected) {
+                            try {
+                                await node.connect();
+                                console.log(`[Lavalink] Successfully reconnected node: ${node.options.id || 'default'}`);
+                                reconnected = true;
+                            } catch (nodeError) {
+                                console.error(`[Lavalink] Failed to reconnect node ${node.options.id || 'default'}:`, nodeError.message);
+                            }
+                        }
+                    }
+                    
+                    // If we have at least one connected node, we can stop the reconnection attempts
+                    if (reconnected || client.musicManager.nodeManager.nodes.some(node => node.connected)) {
+                        clearInterval(client.lavalinkReconnectInterval);
+                        client.lavalinkReconnectInterval = null;
+                        console.log('[Lavalink] Successfully established connection to at least one node.');
+                    }
+                } catch (error) {
+                    console.error('[Lavalink] Error during node reconnection attempt:', error);
+                }
+            }, 30000); // Try to reconnect every 30 seconds
+        } else {
+            console.log('[Lavalink] Successfully connected to at least one node.');
+        }
+    } catch (error) {
+        console.error('[Lavalink] Failed to initialize music manager:', error);
+        
+        // If no nodes were initialized, create a backup node
+        if (client.musicManager.nodeManager.nodes.size === 0) {
+            console.log('[Lavalink] Attempting to create backup node...');
+            try {
+                client.musicManager.createNode({
+                    authorization: process.env.LAVALINK_PASSWORD || "youshallnotpass",
+                    host: process.env.LAVALINK_HOST || "lavalink",
+                    port: parseInt(process.env.LAVALINK_PORT || "2333"),
+                    id: "backup",
+                    secure: process.env.LAVALINK_SECURE === "true"
+                });
+                console.log('[Lavalink] Backup node created. Will attempt connection when needed.');
+            } catch (nodeError) {
+                console.error('[Lavalink] Failed to create backup node:', nodeError);
+            }
+        }
+    }
 
     // Initialize services
     initUpdateNotifier();
@@ -166,26 +295,41 @@ async function registerSlashCommands() {
     try {
         const commandsToRegister = [];
         const seenNames = new Set();
-        // Add all slash commands to the array, skipping duplicates
+        
+        // First, collect all command names to detect duplicates
+        // This initial pass helps us identify which commands are coming from multiple files
         for (const [name, command] of client.slashCommands) {
             if (command.data) {
                 if (Array.isArray(command.data)) {
                     for (const cmdData of command.data) {
-                        if (typeof cmdData.toJSON === "function" && !seenNames.has(cmdData.name)) {
-                            commandsToRegister.push(cmdData.toJSON());
-                            seenNames.add(cmdData.name);
-                        } else if (seenNames.has(cmdData.name)) {
-                            console.warn(`Duplicate command name detected: ${cmdData.name}. Skipping.`);
-                        }
+                        seenNames.add(cmdData.name);
                     }
-                } else if (typeof command.data.toJSON === "function" && !seenNames.has(command.data.name)) {
-                    commandsToRegister.push(command.data.toJSON());
+                } else {
                     seenNames.add(command.data.name);
-                } else if (seenNames.has(command.data.name)) {
-                    console.warn(`Duplicate command name detected: ${command.data.name}. Skipping.`);
                 }
             }
         }
+        
+        // Now we clear the collection and keep track of what we've already added
+        const registeredCommands = new Set();
+        
+        // Add all slash commands to the array, handling duplicates properly
+        for (const [name, command] of client.slashCommands) {
+            if (command.data) {
+                if (Array.isArray(command.data)) {
+                    for (const cmdData of command.data) {
+                        if (typeof cmdData.toJSON === "function" && !registeredCommands.has(cmdData.name)) {
+                            commandsToRegister.push(cmdData.toJSON());
+                            registeredCommands.add(cmdData.name);
+                        }
+                    }
+                } else if (typeof command.data.toJSON === "function" && !registeredCommands.has(command.data.name)) {
+                    commandsToRegister.push(command.data.toJSON());
+                    registeredCommands.add(command.data.name);
+                }
+            }
+        }
+        
         console.log(`Registering ${commandsToRegister.length} unique slash commands with Discord API...`);
         
         // Create REST instance for API calls
@@ -256,14 +400,55 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 // Handle process shutdown to clean up resources
-process.on('SIGINT', () => {
-    console.log('Shutting down...');
-    // Clean up update notifier
-    if (client.updateNotifier) {
-        client.updateNotifier.stop();
+async function gracefulShutdown() {
+    console.log('Shutting down the bot gracefully...');
+    
+    try {
+        // Clean up update notifier
+        if (client.updateNotifier) {
+            client.updateNotifier.stop();
+            console.log('Update notifier service stopped');
+        }
+        
+        // Destroy all music players
+        if (client.musicManager) {
+            try {
+                // Disconnect all players
+                const players = client.musicManager.players.values();
+                for (const player of players) {
+                    console.log(`Destroying music player for guild: ${player.guildId}`);
+                    await player.destroy();
+                }
+                console.log('All music players destroyed');
+            } catch (err) {
+                console.error('Error destroying music players:', err);
+            }
+        }
+        
+        // Log out from Discord
+        if (client.isReady()) {
+            console.log('Logging out from Discord...');
+            await client.destroy();
+            console.log('Successfully logged out from Discord');
+        }
+        
+        console.log('Shutdown complete!');
+    } catch (error) {
+        console.error('Error during graceful shutdown:', error);
+    } finally {
+        // Force exit after a short delay if anything is hanging
+        setTimeout(() => {
+            console.log('Forcing process exit');
+            process.exit(0);
+        }, 2000);
     }
-    process.exit(0);
-});
+}
+
+// Listen for termination signals
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGUSR1', gracefulShutdown);
+process.on('SIGUSR2', gracefulShutdown);
 
 // Error handling for unhandled rejections
 process.on('unhandledRejection', error => {
