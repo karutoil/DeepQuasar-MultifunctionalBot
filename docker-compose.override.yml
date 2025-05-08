@@ -1,5 +1,19 @@
-version: '3'
+version: '3.8'
+
 services:
   bot:
+    build:
+      context: .
+    volumes:
+      - .:/app
     environment:
-      - DOCKER_IMAGE_DIGEST=${DOCKER_IMAGE_DIGEST}
+      - NODE_ENV=development
+    command: npm start
+
+  mongodb:
+    ports:
+      - "27017:27017"
+
+  lavalink:
+    ports:
+      - "2333:2333"

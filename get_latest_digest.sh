@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Fetch the latest digest for karutoil/deepquasar-multifunctionalbot:latest from Docker Hub
-REPO="karutoil/deepquasar-multifunctionalbot"
-TAG="latest"
+# This script fetches the latest digest of the Docker image
+# Usage: ./get_latest_digest.sh [repository] [tag]
 
-API_URL="https://registry.hub.docker.com/v2/repositories/${REPO}/tags/${TAG}"
+REPO=${1:-"deepquasar-multifunctionalbot"}
+TAG=${2:-"nodejs"}
 
-DIGEST=$(curl -s "$API_URL" | jq -r '.images[0].digest')
+# Get the digest from Docker Hub
+DIGEST=$(curl -s "https://registry.hub.docker.com/v2/repositories/${REPO}/tags/${TAG}" | grep -o '"digest":"[^"]*' | sed 's/"digest":"//')
 
-if [ -z "$DIGEST" ] || [ "$DIGEST" == "null" ]; then
-  echo "Failed to fetch latest digest from Docker Hub."
-  exit 1
+if [ -z "$DIGEST" ]; then
+    echo "Failed to get digest for ${REPO}:${TAG}"
+    exit 1
 fi
 
-echo "export DOCKER_IMAGE_DIGEST=$DIGEST"
+echo "$DIGEST"

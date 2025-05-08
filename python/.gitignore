@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+node_modules/
+
+# VSCode
+.vscode/
+
+# Environment variables
+.env
+
+# Databases
+*.db
+*.sqlite3
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Exclude batch scripts
+*.bat
+
+# Exclude text files (e.g., cookies)
+# Ignore all txt files except requirements.txt
+*.txt
+!requirements.txt
+
+lavalink/plugins/*
+
+
+MusicBotEnv/*

@@ -1,0 +1,5 @@
+version: '3'
+services:
+  bot:
+    environment:
+      - DOCKER_IMAGE_DIGEST=${DOCKER_IMAGE_DIGEST}

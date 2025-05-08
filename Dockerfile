@@ -1,11 +1,10 @@
-# Use the official Python image
-FROM python:3.11-slim
+# Use the official Node.js image
+FROM node:20-slim
 
 # Set environment variables
 ARG COMMIT_SHA=unknown
 ENV GIT_COMMIT_SHA=$COMMIT_SHA
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV NODE_ENV=production
 
 # Set work directory
 WORKDIR /app
@@ -13,16 +12,12 @@ WORKDIR /app
 # Install system dependencies including ffmpeg for music features
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
-COPY requirements.txt /app/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy package files and install dependencies
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production
 
 # Copy project files
-COPY . /app/
-
-# Expose any ports if necessary (Discord bots usually don't need this)
-# EXPOSE 800
+COPY . .
 
 # Command to run the bot
-CMD ["python", "main.py"]
+CMD ["node", "index.js"]
