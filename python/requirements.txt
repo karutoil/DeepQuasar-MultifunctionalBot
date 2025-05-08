@@ -1,5 +1,0 @@
-discord.py
-wavelink
-aiohttp
-python-dotenv
-pymongo
