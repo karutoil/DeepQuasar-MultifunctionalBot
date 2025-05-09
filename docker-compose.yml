@@ -1,47 +1,34 @@
 version: '3.8'
 
 services:
-  musicbot:
-    image: karutoil/deepquasar-multifunctionalbot:latest
-    container_name: musicbot-container-2
-    env_file: .env
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-    depends_on:
-      - lavalink2
-    networks:
-      - musicnet
-
-  lavalink2:
+  lavalink:
     image: ghcr.io/lavalink-devs/lavalink:4
-    container_name: lavalink-container-2
+    container_name: deepquasar-lavalink
     environment:
       - _JAVA_OPTIONS=-Xmx2G
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
       - YOUTUBE_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
-    env_file: .env
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml
       - ./lavalink/plugins:/opt/Lavalink/plugins
-    ports:
-      - "2333:2333"
     restart: unless-stopped
     networks:
-      - musicnet
+      - bot_network
 
   mongodb:
     image: mongo:6
-    container_name: mongodb-container-2
+    container_name: deepquasar-mongodb
     restart: unless-stopped
     environment:
       - MONGO_INITDB_DATABASE=musicbot
     volumes:
       - mongodb_data:/data/db
     networks:
-      - musicnet
+      - bot_network
 
 networks:
-  musicnet:
+  bot_network:
     driver: bridge
 
 volumes:

@@ -1,5 +1,11 @@
-version: '3'
+version: '3.8'
+
 services:
-  bot:
-    environment:
-      - DOCKER_IMAGE_DIGEST=${DOCKER_IMAGE_DIGEST}
+
+  mongodb:
+    ports:
+      - "27017:27017"
+
+  lavalink:
+    ports:
+      - "2333:2333"

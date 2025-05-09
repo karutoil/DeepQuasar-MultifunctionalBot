@@ -4,7 +4,7 @@ server:
   password: ${LAVALINK_PASSWORD}
   sources:
     youtube: false  # Disable deprecated built-in YouTube extractor
-    bandcamp: true # test
+    bandcamp: true
     soundcloud: true
     twitch: true
     vimeo: true
@@ -14,7 +14,7 @@ server:
 
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.12.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.13.2"
       snapshot: false
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.5.0"
       repository: "https://maven.lavalink.dev/releases"
@@ -48,7 +48,8 @@ lavalink:
     resamplingQuality: LOW
     trackStuckThresholdMs: 10000
     useSeekGhosting: true
-    youtubePlaylistLoadLimit: 6
+    youtubePlaylistLoadLimit: 25
+    youtubeSearchEnabled: true
     playerUpdateInterval: 5
     youtubeSearchEnabled: true
     soundcloudSearchEnabled: true
