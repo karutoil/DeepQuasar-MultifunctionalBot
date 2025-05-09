@@ -31,7 +31,7 @@ jobs:
         with:
           images: karutoil/deepquasar-multifunctionalbot
           tags: |
-            type=raw,value=latest-javascript
+            type=raw,value=latest
             type=sha,format=short
       
       - name: Build and push Docker image
