@@ -22,6 +22,7 @@ const autoplay = require('./autoplay');
 const djrole = require('./djrole');
 const queueManage = require('./queueManage');
 const search = require('./search');
+const resetmusic = require('./resetmusic');
 
 // Create the composite command
 module.exports = {
@@ -124,11 +125,26 @@ module.exports = {
                     .setRequired(true)),
         new SlashCommandBuilder()
             .setName('search')
-            .setDescription('Search for songs and select one to play')
+            .setDescription('Search for songs or playlists to play')
             .addStringOption(option =>
                 option.setName('query')
-                    .setDescription('Song name to search for')
-                    .setRequired(true)),
+                    .setDescription('Song or playlist name to search for')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option.setName('type')
+                    .setDescription('What to search for')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'Songs', value: 'song' },
+                        { name: 'Playlists', value: 'playlist' }
+                    )),
+        new SlashCommandBuilder()
+            .setName('resetmusic')
+            .setDescription('Reset music system if having issues with playlists or songs')
+            .addBooleanOption(option =>
+                option.setName('confirm')
+                    .setDescription('Confirm reset even if music is currently playing')
+                    .setRequired(false)),
     ],
     
     // Command handler
@@ -181,6 +197,8 @@ module.exports = {
                 return queueManage.remove(interaction, client);
             case 'search':
                 return search.execute(interaction, client);
+            case 'resetmusic':
+                return resetmusic.execute(interaction, client);
             default:
                 return interaction.reply({ 
                     content: 'Unknown music command', 

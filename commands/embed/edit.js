@@ -2,6 +2,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const embedCreatorModel = require('../../models/embedCreatorModel');
 const { parseEmbedJson, checkPermissions, findEmbedMessage } = require('./utils');
+const { logContentDetails, ensureStringMessageId } = require('../../utils/embedContentDebug');
 
 /**
  * Edit an existing embed
@@ -14,12 +15,16 @@ async function editEmbed(interaction) {
     // Get options
     const messageId = interaction.options.getString('message_id');
     const newJson = interaction.options.getString('new_json');
+    const newContent = interaction.options.getString('content');
+    
+    // Ensure message ID is properly handled as a string
+    const messageIdStr = ensureStringMessageId(messageId);
     
     try {
         // Find the message
         const result = await findEmbedMessage(
             interaction.client,
-            messageId,
+            messageIdStr,
             interaction.guildId,
             embedCreatorModel
         );
@@ -43,19 +48,43 @@ async function editEmbed(interaction) {
         }
         
         // Parse new embed
-        const embed = parseEmbedJson(newJson);
-        if (!embed) {
+        const parsed = parseEmbedJson(newJson);
+        if (!parsed) {
             return await interaction.reply({ 
                 content: "Invalid embed JSON.", 
                 ephemeral: true 
             });
         }
         
-        // Edit the message
-        await message.edit({ embeds: [embed] });
+        // Extract embed and potentially content from JSON
+        const { embed, content: jsonContent } = parsed;
         
-        // Update in database
-        await embedCreatorModel.updateEmbed(parseInt(messageId), newJson);
+        // Determine which content to use (priority: explicitly provided > from JSON > existing)
+        let finalContent = result.content; // Default to existing content
+        
+        if (newContent !== undefined) {
+            // Explicitly provided content takes highest priority
+            finalContent = newContent;
+        } else if (jsonContent) {
+            // Content from JSON is next priority
+            finalContent = jsonContent;
+        }
+        
+        // Log detailed content information
+        logContentDetails('edit.js (before edit)', messageIdStr, finalContent);
+        
+        // Edit the message
+        await message.edit({ 
+            content: finalContent, 
+            embeds: [embed] 
+        });
+        
+        // Update in database - use string messageId to preserve precision
+        await embedCreatorModel.updateEmbed(
+            messageId.toString(), 
+            newJson, 
+            finalContent
+        );
         
         await interaction.reply({ 
             content: "Embed updated successfully!", 

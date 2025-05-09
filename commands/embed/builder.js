@@ -24,8 +24,15 @@ async function embedBuilder(interaction) {
  * Start the embed builder with a provided embed
  * @param {Interaction} interaction - The Discord interaction object 
  * @param {EmbedBuilder} initialEmbed - The initial embed to edit
+ * @param {string} messageContent - Initial message content to accompany the embed
  */
-async function startEmbedBuilder(interaction, initialEmbed) {
+async function startEmbedBuilder(interaction, initialEmbed, messageContent = '') {
+    // Debug logging for content
+    /* console.log('Starting embed builder with content:', {
+        hasContent: !!messageContent,
+        contentValue: messageContent || '(empty)'
+    }) */;
+    
     // Create the builder buttons - Main row for most common options
     const row1 = new ActionRowBuilder()
         .addComponents(
@@ -89,9 +96,13 @@ async function startEmbedBuilder(interaction, initialEmbed) {
                 .setStyle(ButtonStyle.Secondary)
         );
         
-    // Row for saving, sending, template management
+    // Row for message content and saving/sending options
     const row4 = new ActionRowBuilder()
         .addComponents(
+            new ButtonBuilder()
+                .setCustomId('message_content')
+                .setLabel('Message Content')
+                .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('export_json')
                 .setLabel('Export JSON')
@@ -103,18 +114,34 @@ async function startEmbedBuilder(interaction, initialEmbed) {
             new ButtonBuilder()
                 .setCustomId('send')
                 .setLabel('Send')
-                .setStyle(ButtonStyle.Success),
+                .setStyle(ButtonStyle.Success)
+        );
+    
+    // Row for cancel button
+    const row5 = new ActionRowBuilder()
+        .addComponents(
             new ButtonBuilder()
                 .setCustomId('cancel')
                 .setLabel('Cancel')
                 .setStyle(ButtonStyle.Danger)
         );
     
+    // Display content message if it exists
+    let contentDisplay = '';
+    if (messageContent && messageContent.length > 0) {
+        /* console.log('Builder displaying content:', {
+            contentLength: messageContent.length,
+            content: messageContent
+        }) */;
+        // Format message content with code block to make mentions more visible
+        contentDisplay = `**Message Content:**\n\`\`\`\n${messageContent}\n\`\`\`\n\n`;
+    }
+    
     // Send the initial message with builder UI
     const response = await interaction.reply({
-        content: 'Interactive embed builder started! Edit your embed using the buttons below:',
+        content: `${contentDisplay}Interactive embed builder started! Edit your embed using the buttons below:`,
         embeds: [initialEmbed],
-        components: [row1, row2, row3, row4],
+        components: [row1, row2, row3, row4, row5],
         ephemeral: true,
         fetchReply: true
     });
@@ -801,6 +828,37 @@ async function startEmbedBuilder(interaction, initialEmbed) {
                 }
                 break;
             }
+            case 'message_content': {
+                const modal = createModal('Edit Message Content', 'Message Content', messageContent, 2000);
+                await i.showModal(modal);
+                
+                const submitted = await i.awaitModalSubmit({
+                    filter: (i) => i.customId === 'edit_message_content',
+                    time: 60000
+                }).catch(() => null);
+                
+                if (submitted) {
+                    messageContent = submitted.fields.getTextInputValue('input');
+                    /* console.log('Updated message content in builder:', {
+                        contentLength: messageContent.length,
+                        content: messageContent || '(empty)'
+                    }) */;
+                    
+                    // Format content display
+                    let contentDisplay = '';
+                    if (messageContent && messageContent.length > 0) {
+                        contentDisplay = `**Message Content:**\n\`\`\`\n${messageContent}\n\`\`\`\n\n`;
+                    }
+                    
+                    await submitted.deferUpdate();
+                    await interaction.editReply({
+                        content: `${contentDisplay}Interactive embed builder started! Edit your embed using the buttons below:`,
+                        embeds: [embed],
+                        components: [row1, row2, row3, row4, row5]
+                    });
+                }
+                break;
+            }
             case 'save_template': {
                 const modal = createTemplateSaveModal();
                 await i.showModal(modal);
@@ -815,11 +873,20 @@ async function startEmbedBuilder(interaction, initialEmbed) {
                     const embedJson = JSON.stringify(embed.toJSON());
                     
                     try {
+                        // Debug log for content when saving template
+                        /* console.log('Saving template from builder with content:', {
+                            name,
+                            hasMessageContent: !!messageContent,
+                            contentLength: messageContent ? messageContent.length : 0,
+                            content: messageContent || '(empty)'
+                        }) */;
+                        
                         await embedCreatorModel.saveTemplate(
                             name,
                             interaction.guildId,
                             embedJson,
-                            interaction.user.id
+                            interaction.user.id,
+                            messageContent // Include message content when saving template
                         );
                         
                         await submitted.reply({
@@ -837,7 +904,21 @@ async function startEmbedBuilder(interaction, initialEmbed) {
                 break;
             }
             case 'export_json': {
-                const jsonStr = JSON.stringify(embed.toJSON(), null, 2);
+                // Create a full JSON object that includes both the embed and message content
+                const fullJsonObject = {
+                    embed: embed.toJSON(),
+                    content: messageContent || undefined
+                };
+                
+                const jsonStr = JSON.stringify(fullJsonObject, null, 2);
+                
+                // Debug log for exported JSON
+                /* console.log('Exporting JSON with content:', {
+                    hasContent: !!messageContent,
+                    contentIncluded: !!fullJsonObject.content,
+                    contentLength: messageContent ? messageContent.length : 0
+                }) */;
+                
                 await i.reply({
                     content: `\`\`\`json\n${jsonStr.length > 1900 ? jsonStr.substring(0, 1900) + '\n... (truncated)' : jsonStr}\n\`\`\``,
                     ephemeral: true
@@ -888,16 +969,17 @@ async function startEmbedBuilder(interaction, initialEmbed) {
                     const channel = interaction.guild.channels.cache.get(channelId);
                     
                     try {
-                        const message = await channel.send({ embeds: [embed] });
+                        const message = await channel.send({ content: messageContent, embeds: [embed] });
                         const embedJson = JSON.stringify(embed.toJSON());
                         
-                        // Save to database
+                        // Save to database with message content
                         await embedCreatorModel.storeEmbed(
                             message.id,
                             channel.id,
                             interaction.guild.id,
                             embedJson,
-                            interaction.user.id
+                            interaction.user.id,
+                            messageContent // Include message content
                         );
                         
                         await selection.update({

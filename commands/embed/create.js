@@ -13,19 +13,36 @@ async function createEmbed(interaction) {
     // Get options
     const jsonInput = interaction.options.getString('json_input');
     const channel = interaction.options.getChannel('channel') || interaction.channel;
+    const messageContent = interaction.options.getString('content') || '';
     
     // Parse embed
-    const embed = parseEmbedJson(jsonInput);
-    if (!embed) {
+    const parsed = parseEmbedJson(jsonInput);
+    if (!parsed) {
         return await interaction.reply({ 
             content: "Invalid embed JSON. Please check your input.", 
             ephemeral: true 
         });
     }
     
+    // Extract embed and potentially content from JSON
+    const { embed, content: jsonContent } = parsed;
+    
+    // Use explicitly provided content or content from JSON
+    const finalContent = messageContent || jsonContent || '';
+    
+    /* console.log('Creating embed with content:', {
+        hasCommandContent: !!messageContent,
+        hasJsonContent: !!jsonContent,
+        finalContent: finalContent || '(empty)',
+        contentSource: messageContent ? 'command' : jsonContent ? 'json' : 'none'
+    }) */;
+    
     try {
         // Send the embed
-        const message = await channel.send({ embeds: [embed] });
+        const message = await channel.send({ 
+            content: finalContent,
+            embeds: [embed] 
+        });
         
         // Store in database
         await embedCreatorModel.storeEmbed(
@@ -33,7 +50,8 @@ async function createEmbed(interaction) {
             channel.id,
             interaction.guildId,
             jsonInput,
-            interaction.user.id
+            interaction.user.id,
+            messageContent
         );
         
         await interaction.reply({ 

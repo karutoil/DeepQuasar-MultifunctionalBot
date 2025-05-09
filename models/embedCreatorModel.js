@@ -1,5 +1,6 @@
 const { getDb } = require('./database');
 const config = require('../config');
+const { logContentDetails, ensureStringMessageId } = require('../utils/embedContentDebug');
 
 /**
  * EmbedCreator model for managing custom embeds
@@ -21,8 +22,14 @@ class EmbedCreatorModel {
      * @returns {Promise<object>} MongoDB update result
      */
     async storeEmbed(messageId, channelId, guildId, embedJson, authorId, content = '') {
+        // Ensure message ID is stored as a string to preserve precision
+        const messageIdStr = ensureStringMessageId(messageId);
+        
+        // Use our debug helper to log content details
+        logContentDetails('storeEmbed', messageIdStr, content);
+        
         return await this.collection.updateOne(
-            { message_id: messageId },
+            { message_id: messageIdStr },
             { 
                 $set: {
                     channel_id: channelId,
@@ -42,14 +49,24 @@ class EmbedCreatorModel {
      * @returns {Promise<object|null>} Embed data or null if not found
      */
     async getEmbed(messageId) {
-        const doc = await this.collection.findOne({ message_id: messageId });
+        // Always convert the messageId to string to avoid precision issues
+        const messageIdStr = ensureStringMessageId(messageId);
+        console.log(`Looking for message in database with string ID: ${messageIdStr}`);
+        
+        const doc = await this.collection.findOne({ message_id: messageIdStr });
         if (doc) {
+            // Ensure content is properly handled for mentions
+            const content = doc.content !== undefined ? String(doc.content) : '';
+            
+            // Use our debug helper for detailed logging
+            logContentDetails('getEmbed from DB', messageIdStr, content);
+            
             return {
                 channelId: doc.channel_id,
                 guildId: doc.guild_id,
                 embedJson: doc.embed_json,
                 authorId: doc.author_id,
-                content: doc.content || ''
+                content: content
             };
         }
         return null;
@@ -63,15 +80,21 @@ class EmbedCreatorModel {
      * @returns {Promise<object>} MongoDB update result
      */
     async updateEmbed(messageId, newJson, content = null) {
+        // Always convert the messageId to string to avoid precision issues
+        const messageIdStr = ensureStringMessageId(messageId);
         const updateObj = { embed_json: newJson };
         
         // Only update content if it was provided
         if (content !== null) {
-            updateObj.content = content;
+            // Ensure content is properly handled for mentions
+            updateObj.content = (content !== undefined) ? String(content) : '';
+            
+            // Use our debug helper to log content details
+            logContentDetails('updateEmbed', messageIdStr, content);
         }
         
         return await this.collection.updateOne(
-            { message_id: messageId },
+            { message_id: messageIdStr },
             { $set: updateObj }
         );
     }
@@ -86,14 +109,40 @@ class EmbedCreatorModel {
      * @returns {Promise<object>} MongoDB update result
      */
     async saveTemplate(name, guildId, embedJson, authorId, content = '') {
+        // Ensure content is treated as a string, even if it contains only mentions
+        // Special handling for @everyone and other mentions which may appear "empty"
+        const contentToSave = (content !== undefined && content !== null) ? String(content) : '';
+        
+        // Special check for @everyone which may appear empty in some conditions
+        const hasEveryoneMention = contentToSave.includes('@everyone') || 
+                                  contentToSave.includes('@here') ||
+                                  contentToSave.match(/<@&\d+>/g); // Role mention pattern
+        
+        // Use our debug helper to log content details
+        logContentDetails(`saveTemplate (${name})`, 'template', contentToSave);
+        
+        // Add content to the JSON to ensure it's preserved
+        let jsonWithContent;
+        try {
+            const embedData = JSON.parse(embedJson);
+            // Create a new object with both embed and content
+            jsonWithContent = JSON.stringify({
+                embed: embedData,
+                content: contentToSave
+            });
+        } catch (e) {
+            console.error('Error adding content to JSON:', e);
+            jsonWithContent = embedJson; // Fallback to original JSON
+        }
+        
         return await this.templateCollection.updateOne(
             { name: name, guild_id: guildId },
             {
                 $set: {
-                    embed_json: embedJson,
+                    embed_json: jsonWithContent, // Use enhanced JSON that includes content
                     author_id: authorId,
                     created_at: new Date(),
-                    content: content
+                    content: contentToSave
                 }
             },
             { upsert: true }
@@ -113,12 +162,18 @@ class EmbedCreatorModel {
         });
         
         if (doc) {
+            // Ensure content is properly handled for mentions
+            const content = doc.content !== undefined ? String(doc.content) : '';
+            
+            // Use our debug helper to log content details
+            logContentDetails(`getTemplate (${name})`, 'template', content);
+            
             return {
                 name: doc.name,
                 embedJson: doc.embed_json,
                 authorId: doc.author_id,
                 createdAt: doc.created_at,
-                content: doc.content || ''
+                content: content
             };
         }
         return null;

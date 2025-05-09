@@ -46,19 +46,21 @@ Deploy using our pre-built Docker image from Docker Hub.
 | `/stop` | Stop playback and clear the queue | DJ/Admin |
 | `/skip` | Skip the current song | DJ/Admin |
 | `/queue` | Show the current queue | None |
-| `/nowplaying` | Show the currently playing song | None |
+| `/nowplaying` | Show the currently playing track | None |
 | `/volume [level]` | Set or show playback volume (0-200%) | DJ/Admin |
-| `/seek <seconds>` | Seek to a position in the current song | DJ/Admin |
-| `/move <from> <to>` | Move a song in the queue | DJ/Admin |
-| `/remove <position>` | Remove a song from the queue | DJ/Admin |
+| `/seek <seconds>` | Seek to a position in the current track | DJ/Admin |
+| `/move <from_pos> <to_pos>` | Move a track in the queue | DJ/Admin |
+| `/remove <position>` | Remove a track from the queue by position | DJ/Admin |
 | `/clear` | Clear the entire queue | DJ/Admin |
 | `/shuffle` | Shuffle the queue | DJ/Admin |
-| `/loop` | Toggle looping the current song | DJ/Admin |
-| `/replay` | Replay the current song | DJ/Admin |
-| `/history` | Show recently played songs | None |
-| `/autoplay` | Toggle autoplay related songs | DJ/Admin |
+| `/loop` | Toggle looping the current track | DJ/Admin |
+| `/replay` | Replay the current track from the beginning | DJ/Admin |
+| `/history` | Show recently played tracks | None |
+| `/autoplay` | Toggle autoplay related tracks | DJ/Admin |
 | `/setdj <role>` | Set the DJ role | Admin |
 | `/cleardj` | Clear the DJ role | Admin |
+| `/search <query> [type]` | Search for songs or playlists to play | None |
+| `/resetmusic [confirm]` | Reset music system if having issues with playlists or songs | Admin |
 
 ### 🎫 Ticket System
 
@@ -90,30 +92,34 @@ Deploy using our pre-built Docker image from Docker Hub.
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
-| `/modlog setchannel <channel>` | Set the moderation log channel | Admin |
-| `/modlog toggle <event>` | Enable or disable a specific log event | Admin |
-| `/modlog toggleall` | Enable or disable all moderation log events | Admin |
+| `/modlog setchannel <channel>` | Set the channel for logging server events | Manage Guild |
+| `/modlog toggle <event> <enabled>` | Enable or disable a specific log event | Manage Guild |
+| `/modlog toggleall` | Enable or disable all moderation log events | Manage Guild |
 
 ### 🤖 AI Chatbot
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
-| `/chatbot configure <api_base> [api_key] [model_name]` | Configure your local AI endpoint | Admin |
-| `/chatbot prompt [prompt]` | Set or clear a custom system prompt | Admin |
-| `/chatbot toggle <enabled>` | Enable or disable AI responses | Admin |
-| `/chatbot channel <channel> <add/remove>` | Add or remove a whitelisted channel | Admin |
-| `/chatbot listchannels` | List all whitelisted channels | None |
-| `/chatbot chance <chance>` | Set AI response chance percentage (0-100) | Admin |
-| `/chatbot test <message>` | Test your AI connection with a message | Admin |
+| `/chatbot configure <api_base> [api_key] [model_name]` | Configure your local AI endpoint | Administrator |
+| `/chatbot prompt [prompt]` | Set or clear a custom system prompt | Administrator |
+| `/chatbot toggle <enabled>` | Enable or disable AI responses | Administrator |
+| `/chatbot channel <channel> <add/remove>` | Add or remove a whitelisted channel | Administrator |
+| `/chatbot listchannels` | List all whitelisted channels | Administrator |
+| `/chatbot chance <chance>` | Set AI response chance percentage (0-100) | Administrator |
+| `/chatbot test <message>` | Test your AI connection with a message | Administrator |
 
 ### 📝 Embed Creator
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
 | `/embed create <json_input> [channel]` | Create an embed from JSON | Manage Messages |
-| `/embed edit <message_id> <new_json>` | Edit an existing embed by message ID | Manage Messages |
+| `/embed edit <message_id> <new_json> [content]` | Edit an existing embed by message ID | Manage Messages |
 | `/embed get <message_id>` | Get the JSON of an existing embed | Manage Messages |
 | `/embed builder` | Interactively build an embed with buttons | Manage Messages |
+| `/embed template-save <message_id> <template_name>` | Save an embed as a template | Manage Messages |
+| `/embed template-list` | List all available embed templates | Manage Messages |
+| `/embed template-load <template_name>` | Load an embed template | Manage Messages |
+| `/embed template-delete <template_name>` | Delete an embed template | Manage Messages |
 
 ### 🧹 Cleanup
 
@@ -127,9 +133,9 @@ Deploy using our pre-built Docker image from Docker Hub.
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
-| `/autorole set <role>` | Set role for new members | Admin |
-| `/autorole remove` | Remove auto-role | Admin |
-| `/autorole status` | Check auto-role status | Admin |
+| `/autorole set <role>` | Set role for new members | Administrator |
+| `/autorole remove` | Remove auto-role | Administrator |
+| `/autorole status` | Check auto-role status | Administrator |
 
 ### 🏆 Invites
 
@@ -141,12 +147,12 @@ Deploy using our pre-built Docker image from Docker Hub.
 
 | Command | Description | Permissions |
 |---------|-------------|-------------|
-| `/updatenotifier status` | Check update notifier status | Admin |
-| `/updatenotifier enable` | Enable update notifications | Admin |
-| `/updatenotifier disable` | Disable update notifications | Admin |
-| `/updatenotifier setowner [user]` | Set user to receive update notifications | Admin |
-| `/updatenotifier settoken [token]` | Set GitHub API token for higher rate limits | Admin |
-| `/updatenotifier check` | Check for updates manually | Admin |
+| `/updatenotifier status` | Check update notifier status | Administrator |
+| `/updatenotifier enable` | Enable update notifications | Administrator |
+| `/updatenotifier disable` | Disable update notifications | Administrator |
+| `/updatenotifier setowner [user]` | Set user to receive update notifications | Administrator |
+| `/updatenotifier settoken [token]` | Set GitHub API token for higher rate limits | Administrator |
+| `/updatenotifier check` | Check for updates manually | Administrator |
 
 ## Environment Variables
 

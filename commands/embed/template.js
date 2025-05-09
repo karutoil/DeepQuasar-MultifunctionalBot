@@ -30,14 +30,26 @@ async function saveTemplate(interaction) {
             });
         }
         
-        const { embedJson } = result;
+        const { embedJson, content, message } = result;
         
-        // Save template
+        // Debug message content before saving
+        /* console.log('Content from message before saving as template:', {
+            messageId,
+            hasContent: !!content, 
+            contentLength: content ? content.length : 0,
+            content: content || '(no content found)',
+            messageContentRaw: message.content,
+            messageContentLength: message.content ? message.content.length : 0,
+            hasRawContent: !!message.content
+        }) */;
+        
+        // Save template with raw content from message
         await embedCreatorModel.saveTemplate(
             templateName,
             interaction.guildId,
             embedJson,
-            interaction.user.id
+            interaction.user.id,
+            message.content // Use raw message content
         );
         
         await interaction.reply({ 
@@ -78,7 +90,7 @@ async function listTemplates(interaction) {
             .addFields(
                 templates.map(template => ({
                     name: template.name,
-                    value: `Created by: <@${template.authorId}>\nDate: ${template.createdAt.toLocaleDateString()}`,
+                    value: `Created by: <@${template.authorId}>\nDate: ${template.createdAt.toLocaleDateString()}${template.hasContent ? '\nHas Message Content: ✅' : ''}`,
                     inline: true
                 }))
             );
@@ -117,14 +129,33 @@ async function loadTemplate(interaction, builderModule) {
             });
         }
         
+        // Log template data for debugging
+        /* console.log('Template data:', {
+            name: template.name,
+            content: template.content,
+            hasContent: !!template.content
+        }) */;
+        
         // Parse embed from template
-        const embed = parseEmbedJson(template.embedJson);
-        if (!embed) {
+        const parsed = parseEmbedJson(template.embedJson);
+        if (!parsed) {
             return await interaction.reply({ 
                 content: "Invalid template data.", 
                 ephemeral: true 
             });
         }
+        
+        // Extract embed and potentially content from JSON
+        const { embed } = parsed; // Only extract embed as we use template.content directly
+        
+        // Log embedded JSON content vs template content
+        /* console.log('Template parsed JSON content vs DB content:', {
+            hasJsonContent: !!parsed.content,
+            jsonContent: parsed.content || '(no content in JSON)',
+            hasDBContent: !!template.content,
+            dbContent: template.content || '(no content in DB)',
+            useSource: parsed.content ? 'JSON content found' : 'Using DB content'
+        }) */;
         
         // Prepare buttons for template operations
         const row = new ActionRowBuilder()
@@ -139,9 +170,20 @@ async function loadTemplate(interaction, builderModule) {
                     .setStyle(ButtonStyle.Success)
             );
         
+        // Build content to display
+        let contentDisplay = '';
+        if (template.content && template.content.length > 0) {
+            // Enhanced content display to show mentions more clearly
+            contentDisplay = `**Message Content:**\n\`\`\`\n${template.content}\n\`\`\`\n\n`;
+            /* console.log('Adding content display to template:', {
+                contentLength: template.content.length,
+                content: template.content
+            }) */;
+        }
+        
         // Send preview with buttons
         const response = await interaction.reply({
-            content: 'Template loaded!',
+            content: `${contentDisplay}Template loaded!`,
             embeds: [embed],
             components: [row],
             ephemeral: true,
@@ -157,8 +199,23 @@ async function loadTemplate(interaction, builderModule) {
         // Current embed data for the session
         const sessionData = {
             embed,
-            templateName
+            templateName,
+            // Use template.content as primary source, fall back to parsed.content if available
+            content: template.content || parsed.content || ''
         };
+        
+        // Debug the session data with more details
+        /* console.log('Session data created:', {
+            templateName,
+            hasTemplateContent: !!template.content,
+            hasJsonContent: !!parsed.content, 
+            contentSource: template.content ? 'DB' : parsed.content ? 'JSON' : 'None',
+            contentFromTemplate: template.content || '(empty)',
+            contentFromJson: parsed.content || '(empty)',
+            contentInSession: sessionData.content || '(empty)',
+            contentType: typeof sessionData.content,
+            contentLength: sessionData.content ? sessionData.content.length : 0
+        }) */;
         
         // Handle button interactions
         collector.on('collect', async (i) => {
@@ -166,7 +223,9 @@ async function loadTemplate(interaction, builderModule) {
             
             switch (id) {
                 case 'edit_template':
-                    await builderModule.startEmbedBuilder(i, sessionData.embed);
+                    // Make sure sessionData.content is properly passed to the builder
+                    /* console.log('Passing content to builder:', sessionData.content) */;
+                    await builderModule.startEmbedBuilder(i, sessionData.embed, sessionData.content);
                     break;
                 case 'post_template':
                     // Create channel selection
@@ -205,7 +264,25 @@ async function loadTemplate(interaction, builderModule) {
                     const channel = interaction.guild.channels.cache.get(channelId);
                     
                     try {
-                        const message = await channel.send({ embeds: [sessionData.embed] });
+                        // Debug log for content when sending
+                        /* console.log('Preparing to send template with content:', {
+                            hasContent: !!sessionData.content,
+                            contentLength: sessionData.content ? sessionData.content.length : 0,
+                            content: sessionData.content || '(no content)',
+                            contentType: typeof sessionData.content
+                        }) */;
+                        
+                        // Always use the raw content string to preserve mentions
+                        const messageContent = sessionData.content;
+                        /* console.log('Final message content value:', 
+                            messageContent === undefined ? '(undefined)' : 
+                            messageContent === '' ? '(empty string)' : 
+                            messageContent) */;
+                        
+                        const message = await channel.send({ 
+                            content: messageContent,
+                            embeds: [sessionData.embed] 
+                        });
                         const embedJson = JSON.stringify(sessionData.embed.toJSON());
                         
                         // Save to database
@@ -214,7 +291,8 @@ async function loadTemplate(interaction, builderModule) {
                             channel.id,
                             interaction.guild.id,
                             embedJson,
-                            interaction.user.id
+                            interaction.user.id,
+                            sessionData.content
                         );
                         
                         await i.update({

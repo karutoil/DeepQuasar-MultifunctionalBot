@@ -27,6 +27,10 @@ module.exports = {
                           .setDescription('Channel to post in (defaults to current)')
                           .addChannelTypes(ChannelType.GuildText)
                           .setRequired(false))
+                .addStringOption(option => 
+                    option.setName('content')
+                          .setDescription('Text content to display with the embed (mentions, etc)')
+                          .setRequired(false))
         )
         .addSubcommand(subcommand =>
             subcommand
@@ -40,6 +44,10 @@ module.exports = {
                     option.setName('new_json')
                           .setDescription('New embed JSON')
                           .setRequired(true))
+                .addStringOption(option => 
+                    option.setName('content')
+                          .setDescription('New message content (leave empty to keep current)')
+                          .setRequired(false))
         )
         .addSubcommand(subcommand =>
             subcommand

@@ -85,6 +85,8 @@ async function hasDJPermission(guildId, member) {
     }
 }
 
+// Playlist search functions removed since caching was causing URL expiration issues
+
 module.exports = {
     init,
     getVolume,

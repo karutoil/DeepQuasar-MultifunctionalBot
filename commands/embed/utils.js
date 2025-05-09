@@ -1,11 +1,12 @@
 // Common utilities for embed commands
 const { ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const EmbedCreatorModel = require('../../models/embedCreatorModel');
+const { logContentDetails, ensureStringMessageId } = require('../../utils/embedContentDebug');
 
 /**
  * Parse JSON string into an embed
  * @param {string} jsonStr - JSON string to parse
- * @returns {EmbedBuilder|null} Embed object or null if invalid
+ * @returns {{embed: EmbedBuilder, content: string}|null} Embed object and content or null if invalid
  */
 function parseEmbedJson(jsonStr) {
     try {
@@ -15,8 +16,17 @@ function parseEmbedJson(jsonStr) {
         // Check if the JSON has an 'embed' property or is directly an embed
         const embedData = data.embed || data;
         
+        // Check if content is included in the JSON
+        const content = data.content || '';
+        
+        // Use our debug helper to log content details
+        logContentDetails('parseEmbedJson', 'json_parsing', content);
+        
         // Create embed from data
-        return EmbedBuilder.from(embedData);
+        const embed = EmbedBuilder.from(embedData);
+        
+        // Return both embed and content
+        return { embed, content };
     } catch (error) {
         console.error('Error parsing embed JSON:', error);
         return null;
@@ -56,23 +66,47 @@ async function findEmbedMessage(client, messageId, guildId, embedCreatorModel) {
         embedCreatorModel = new EmbedCreatorModel();
     }
     
-    // Try to parse the message ID as a number
-    const messageIdInt = parseInt(messageId);
-    if (isNaN(messageIdInt)) {
-        return null;
-    }
+    // Ensure we're working with a string ID to preserve precision
+    const messageIdStr = ensureStringMessageId(messageId);
+    /* console.log(`Looking for message with ID: ${messageIdStr} in guild: ${guildId}`) */;
     
     // Try to get from database first
-    const record = await embedCreatorModel.getEmbed(messageIdInt);
+    const record = await embedCreatorModel.getEmbed(messageIdStr);
     if (record) {
+        /* console.log(`Found message in database for ID: ${messageIdStr}`) */;
         try {
-            const channel = await client.channels.fetch(record.channelId).catch(() => null);
-            if (!channel) return null;
+            const channel = await client.channels.fetch(record.channelId).catch((err) => {
+                console.error(`Failed to fetch channel ${record.channelId}:`, err.message);
+                return null;
+            });
+            if (!channel) {
+                console.error(`Channel not found: ${record.channelId}`);
+                return null;
+            }
             
-            const message = await channel.messages.fetch(messageIdInt).catch(() => null);
-            if (!message) return null;
+            const message = await channel.messages.fetch(messageIdStr).catch((err) => {
+                console.error(`Failed to fetch message ${messageIdStr} in channel ${channel.name}:`, err.message);
+                return null;
+            });
+            if (!message) {
+                console.error(`Message not found in channel: ${messageIdStr}`);
+                return null;
+            }
             
-            return { message, channel, embedJson: record.embedJson, record };
+            // Log the content from database with more details
+            logContentDetails('database record', messageIdStr, record.content);
+            
+            // Also log the raw message content
+            logContentDetails('message (from DB fetch)', messageIdStr, message.content);
+            
+            return { 
+                message, 
+                channel, 
+                embedJson: record.embedJson, 
+                record,
+                // Always use the raw message content when possible
+                content: message.content || record.content || '' 
+            };
         } catch (error) {
             console.error('Error fetching embed from database:', error);
             return null;
@@ -81,14 +115,34 @@ async function findEmbedMessage(client, messageId, guildId, embedCreatorModel) {
     
     // If not in database, try to find in guild channels
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) return null;
+    if (!guild) {
+        /* console.log(`Guild not found: ${guildId}`) */;
+        return null;
+    }
+    
+    // Debug text channels in the guild
+    /* console.log(`Searching for message in ${guild.channels.cache.filter(c => c.type === ChannelType.GuildText).size} text channels`) */;
     
     for (const [, channel] of guild.channels.cache.filter(c => c.type === ChannelType.GuildText)) {
         try {
-            const message = await channel.messages.fetch(messageIdInt).catch(() => null);
+            /* console.log(`Checking channel: ${channel.name} (${channel.id})`) */;
+            const message = await channel.messages.fetch(messageIdStr).catch((err) => {
+                /* console.log(`Could not fetch message in channel ${channel.name}: ${err.message}`) */;
+                return null;
+            });
             if (message && message.embeds && message.embeds.length > 0) {
                 const embedJson = JSON.stringify(message.embeds[0].toJSON(), null, 2);
-                return { message, channel, embedJson };
+                
+                // Use our debug helper to log content details
+                logContentDetails('message (from channel search)', messageIdStr, message.content);
+                
+                return { 
+                    message, 
+                    channel, 
+                    embedJson,
+                    // Always use the raw message content
+                    content: message.content || '' 
+                };
             }
         } catch (error) {
             // Continue to next channel

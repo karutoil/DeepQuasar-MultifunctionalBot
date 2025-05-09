@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const updateNotifierModel = require('../models/updateNotifierModel');
+const { isBotOwner } = require('../utils/common');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -69,12 +70,33 @@ module.exports = {
                 await this.handleDisable(interaction);
                 break;
             case 'setowner':
+                // This is a sensitive operation, check for bot owner
+                if (!isBotOwner(interaction.user.id)) {
+                    return await interaction.reply({
+                        content: '❌ This command is restricted to bot owners only.',
+                        ephemeral: true
+                    });
+                }
                 await this.handleSetOwner(interaction);
                 break;
             case 'settoken':
+                // This is a sensitive operation, check for bot owner
+                if (!isBotOwner(interaction.user.id)) {
+                    return await interaction.reply({
+                        content: '❌ This command is restricted to bot owners only.',
+                        ephemeral: true
+                    });
+                }
                 await this.handleSetToken(interaction);
                 break;
             case 'check':
+                // This is a sensitive operation, check for bot owner
+                if (!isBotOwner(interaction.user.id)) {
+                    return await interaction.reply({
+                        content: '❌ This command is restricted to bot owners only.',
+                        ephemeral: true
+                    });
+                }
                 await this.handleCheck(interaction, client);
                 break;
         }
