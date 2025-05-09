@@ -51,7 +51,6 @@ lavalink:
     youtubePlaylistLoadLimit: 25
     youtubeSearchEnabled: true
     playerUpdateInterval: 5
-    youtubeSearchEnabled: true
     soundcloudSearchEnabled: true
     gc-warnings: true
 
