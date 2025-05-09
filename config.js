@@ -14,6 +14,7 @@ module.exports = {
             tickets: 'tickets',
             ticketSettings: 'ticket_settings',
             embedCreator: 'embed_creator',
+            embedTemplates: 'embed_templates',
             localAI: 'local_ai',
             modLog: 'mod_log',
             music: 'music',

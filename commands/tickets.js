@@ -248,11 +248,23 @@ module.exports = {
                 ephemeral: true
             });
 
-            // Log ticket creation
+            // Log ticket creation with enhanced embed
             await this.sendLog(
                 client,
                 interaction.guildId,
-                `🎫 New ticket created by ${interaction.user} in ${ticketChannel}`
+                `🎫 New ticket created by ${interaction.user} in ${ticketChannel}`,
+                {
+                    color: 0x2ECC71, // Green
+                    author: {
+                        name: `Ticket Created | ${interaction.user.tag}`,
+                        iconURL: interaction.user.displayAvatarURL()
+                    },
+                    fields: [
+                        { name: 'Ticket', value: ticketChannel.name, inline: true },
+                        { name: 'Created By', value: `${interaction.user}`, inline: true },
+                        { name: 'Description', value: description.substring(0, 100) + (description.length > 100 ? '...' : ''), inline: false }
+                    ]
+                }
             );
         } catch (error) {
             console.error('Error creating ticket:', error);
@@ -345,7 +357,7 @@ module.exports = {
         });
     },
 
-    async sendLog(client, guildId, message) {
+    async sendLog(client, guildId, message, options = {}) {
         try {
             // Get guild settings
             const settings = await ticketModel.getGuildSettings(guildId);
@@ -355,8 +367,39 @@ module.exports = {
             const logChannel = client.channels.cache.get(settings.logChannel);
             if (!logChannel) return;
 
-            // Send log message
-            await logChannel.send(message);
+            // Create embed
+            const embed = new EmbedBuilder()
+                .setDescription(message)
+                .setColor(options.color || 0x2B82CB)
+                .setTimestamp();
+            
+            // Add author if provided
+            if (options.author) {
+                embed.setAuthor({ 
+                    name: options.author.name || 'Ticket System',
+                    iconURL: options.author.iconURL
+                });
+            } else {
+                embed.setAuthor({ 
+                    name: 'Ticket System',
+                    iconURL: client.user.displayAvatarURL()
+                });
+            }
+            
+            // Add footer if provided or default
+            if (options.footer) {
+                embed.setFooter({ text: options.footer });
+            } else {
+                embed.setFooter({ text: `Guild ID: ${guildId}` });
+            }
+            
+            // Add fields if provided
+            if (options.fields && Array.isArray(options.fields)) {
+                embed.addFields(options.fields);
+            }
+
+            // Send log message with embed
+            await logChannel.send({ embeds: [embed] });
         } catch (error) {
             console.error('Error sending ticket log message:', error);
         }

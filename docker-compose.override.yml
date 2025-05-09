@@ -1,14 +1,6 @@
 version: '3.8'
 
 services:
-  bot:
-    build:
-      context: .
-    volumes:
-      - .:/app
-    environment:
-      - NODE_ENV=development
-    command: npm start
 
   mongodb:
     ports:

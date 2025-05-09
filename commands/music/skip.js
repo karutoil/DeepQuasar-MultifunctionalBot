@@ -38,15 +38,43 @@ module.exports = {
         const currentTrack = player.queue.current;
         const trackTitle = currentTrack ? (currentTrack.title || 'the current song') : 'the current song';
         
-        await player.skip();
-        
-        const embed = new EmbedBuilder()
-            .setColor('#2ECC71')
-            .setTitle('⏭️ Skipped')
-            .setDescription(`Skipped **${trackTitle}**`)
-            .setFooter({ text: `Requested by ${interaction.user.tag}` })
-            .setTimestamp();
-        
-        return interaction.reply({ embeds: [embed] });
+        try {
+            await player.skip();
+            
+            const embed = new EmbedBuilder()
+                .setColor('#2ECC71')
+                .setTitle('⏭️ Skipped')
+                .setDescription(`Skipped **${trackTitle}**`)
+                .setFooter({ text: `Requested by ${interaction.user.tag}` })
+                .setTimestamp();
+            
+            return interaction.reply({ embeds: [embed] });
+        } catch (error) {
+            console.error('Error skipping track:', error);
+            
+            // Check if this was the last track in the queue
+            if (error.message?.includes("Can't skip more than the queue size")) {
+                // Stop the player instead of skipping
+                await player.stop();
+                
+                const embed = new EmbedBuilder()
+                    .setColor('#2ECC71')
+                    .setTitle('⏹️ Playback Ended')
+                    .setDescription(`Stopped playing **${trackTitle}** (last track in the queue)`)
+                    .setFooter({ text: `Requested by ${interaction.user.tag}` })
+                    .setTimestamp();
+                
+                return interaction.reply({ embeds: [embed] });
+            }
+            
+            // Handle other errors
+            const errorEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('❌ Error')
+                .setDescription(`An error occurred while trying to skip: ${error.message}`)
+                .setTimestamp();
+            
+            return interaction.reply({ embeds: [errorEmbed] });
+        }
     }
 };

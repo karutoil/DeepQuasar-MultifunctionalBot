@@ -520,7 +520,7 @@ module.exports = {
                 .addFields(
                     { name: 'Channel name', value: channel.name, inline: true },
                     { name: 'Channel ID', value: channel.id, inline: true },
-                    { name: 'Type', value: channel.type, inline: true }
+                    { name: 'Type', value: String(channel.type), inline: true }
                 )
                 .setColor(Colors.Green);
                 break;
@@ -536,7 +536,7 @@ module.exports = {
                 .addFields(
                     { name: 'Channel name', value: channel.name, inline: true },
                     { name: 'Channel ID', value: channel.id, inline: true },
-                    { name: 'Type', value: channel.type, inline: true }
+                    { name: 'Type', value: String(channel.type), inline: true }
                 )
                 .setColor(Colors.Red);
                 break;
@@ -579,7 +579,7 @@ module.exports = {
                 .addFields(
                     { name: 'Channel name', value: after.name, inline: true },
                     { name: 'Channel ID', value: after.id, inline: true },
-                    { name: 'Type', value: after.type, inline: true }
+                    { name: 'Type', value: String(after.type), inline: true }
                 )
                 .setColor(Colors.Blue);
                 break;

@@ -1,31 +1,6 @@
 version: '3.8'
 
 services:
-  bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        COMMIT_SHA: ${COMMIT_SHA:-unknown}
-    image: deepquasar-multifunctionalbot:nodejs
-    container_name: deepquasar-bot
-    env_file: .env
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/musicbot
-      - LAVALINK_HOST=lavalink
-      - LAVALINK_PORT=2333
-      - LAVALINK_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
-      - LAVALINK_SECURE=false
-      - DOCKER_IMAGE_DIGEST=${COMMIT_SHA:-unknown}
-    volumes:
-      - ./data:/app/data
-    restart: unless-stopped
-    depends_on:
-      - mongodb
-      - lavalink
-    networks:
-      - bot_network
-
   lavalink:
     image: ghcr.io/lavalink-devs/lavalink:4
     container_name: deepquasar-lavalink

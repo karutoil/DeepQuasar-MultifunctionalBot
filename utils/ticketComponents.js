@@ -137,7 +137,18 @@ class TicketControlView {
         await ticketsCommand.sendLog(
             interaction.client,
             interaction.guildId,
-            `📝 Ticket ${interaction.channel} claimed by ${interaction.user}`
+            `📝 Ticket ${interaction.channel} claimed by ${interaction.user}`,
+            {
+                color: 0x3498DB, // Blue
+                author: {
+                    name: `Ticket Claimed | ${interaction.user.tag}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                },
+                fields: [
+                    { name: 'Ticket', value: `${interaction.channel.name}`, inline: true },
+                    { name: 'Claimed By', value: `${interaction.user}`, inline: true },
+                ]
+            }
         );
     }
 
@@ -193,7 +204,19 @@ class TicketControlView {
         await ticketsCommand.sendLog(
             interaction.client,
             interaction.guildId,
-            `📁 Ticket ${interaction.channel} closed by ${interaction.user}`
+            `📁 Ticket ${interaction.channel} closed by ${interaction.user}`,
+            {
+                color: 0xF1C40F, // Yellow/Gold
+                author: {
+                    name: `Ticket Closed | ${interaction.user.tag}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                },
+                fields: [
+                    { name: 'Ticket', value: `${interaction.channel.name}`, inline: true },
+                    { name: 'Closed By', value: `${interaction.user}`, inline: true },
+                    { name: 'Status', value: 'Archived', inline: true }
+                ]
+            }
         );
     }
 
@@ -239,7 +262,19 @@ class TicketControlView {
         await ticketsCommand.sendLog(
             interaction.client,
             interaction.guildId,
-            `❌ Ticket ${interaction.channel.name} deleted by ${interaction.user}`
+            `❌ Ticket ${interaction.channel.name} deleted by ${interaction.user}`,
+            {
+                color: 0xE74C3C, // Red
+                author: {
+                    name: `Ticket Deleted | ${interaction.user.tag}`,
+                    iconURL: interaction.user.displayAvatarURL()
+                },
+                fields: [
+                    { name: 'Ticket', value: `${interaction.channel.name}`, inline: true },
+                    { name: 'Deleted By', value: `${interaction.user}`, inline: true },
+                    { name: 'Ticket Creator', value: `<@${ticket.creatorId}>`, inline: true }
+                ]
+            }
         );
 
         // Delete ticket from database

@@ -74,26 +74,118 @@ client.musicManager.on('nodeError', (node, error) => {
 // Function to load slash commands
 async function loadCommands() {
     const commandsPath = path.join(__dirname, 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
     
+    // First identify which files are wrappers for subdirectories
+    const subdirWrappers = new Set();
+    
+    // Get subdirectories in the commands folder
+    const subdirectories = fs.readdirSync(commandsPath, { withFileTypes: true })
+        .filter(dirent => dirent.isDirectory())
+        .map(dirent => dirent.name);
+    
+    // Check each subdirectory for an index.js file
+    for (const dir of subdirectories) {
+        const indexPath = path.join(commandsPath, dir, 'index.js');
+        if (fs.existsSync(indexPath)) {
+            // If there's a matching wrapper file for this subdirectory, add it to our set
+            const wrapperFileName = `${dir}.js`;
+            const wrapperPath = path.join(commandsPath, wrapperFileName);
+            if (fs.existsSync(wrapperPath)) {
+                subdirWrappers.add(wrapperFileName);
+                console.log(`[INFO] Identified ${wrapperFileName} as a wrapper for ${dir}/ subdirectory`);
+            }
+        }
+    }
+    
+    // Get command files, filtering out wrapper files
+    const commandFiles = fs.readdirSync(commandsPath)
+        .filter(file => file.endsWith('.js') && !subdirWrappers.has(file));
+    
+    console.log(`[INFO] Loading ${commandFiles.length} command files, skipping ${subdirWrappers.size} subdirectory wrappers`);
+    
+    // Track command names to prevent duplicates
+    const loadedCommandNames = new Set();
+    
+    // Load command files
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        
-        // Handle both single and multiple command definitions
-        if ('data' in command && 'execute' in command) {
-            if (Array.isArray(command.data)) {
-                // For multiple commands like music commands
-                for (const cmdData of command.data) {
-                    client.slashCommands.set(cmdData.name, command);
-                    console.log(`Loaded slash command: ${cmdData.name}`);
+        try {
+            const command = require(filePath);
+            
+            // Handle both single and multiple command definitions
+            if ('data' in command && 'execute' in command) {
+                if (Array.isArray(command.data)) {
+                    // For multiple commands like music commands
+                    for (const cmdData of command.data) {
+                        // Skip if we've already loaded a command with this name
+                        if (loadedCommandNames.has(cmdData.name)) {
+                            console.log(`[WARNING] Skipping duplicate command: ${cmdData.name} from ${file}`);
+                            continue;
+                        }
+                        
+                        client.slashCommands.set(cmdData.name, command);
+                        loadedCommandNames.add(cmdData.name);
+                        console.log(`Loaded slash command: ${cmdData.name} from ${file}`);
+                    }
+                } else {
+                    const commandName = command.data.name;
+                    
+                    // Skip if we've already loaded a command with this name
+                    if (loadedCommandNames.has(commandName)) {
+                        console.log(`[WARNING] Skipping duplicate command: ${commandName} from ${file}`);
+                        continue;
+                    }
+                    
+                    client.slashCommands.set(commandName, command);
+                    loadedCommandNames.add(commandName);
+                    console.log(`Loaded slash command: ${commandName} from ${file}`);
                 }
             } else {
-                client.slashCommands.set(command.data.name, command);
-                console.log(`Loaded slash command: ${command.data.name}`);
+                console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
             }
-        } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        } catch (error) {
+            console.error(`[ERROR] Failed to load command at ${filePath}:`, error);
+        }
+    }
+    
+    // Now load the subdirectory wrapper commands
+    for (const wrapperFile of subdirWrappers) {
+        const filePath = path.join(commandsPath, wrapperFile);
+        try {
+            const command = require(filePath);
+            
+            if ('data' in command && 'execute' in command) {
+                if (Array.isArray(command.data)) {
+                    // For multiple commands like music commands
+                    for (const cmdData of command.data) {
+                        // Skip if we've already loaded a command with this name
+                        if (loadedCommandNames.has(cmdData.name)) {
+                            console.log(`[WARNING] Skipping duplicate command: ${cmdData.name} from ${wrapperFile}`);
+                            continue;
+                        }
+                        
+                        client.slashCommands.set(cmdData.name, command);
+                        loadedCommandNames.add(cmdData.name);
+                        console.log(`Loaded slash command: ${cmdData.name} from ${wrapperFile}`);
+                    }
+                } else {
+                    const commandName = command.data.name;
+                    
+                    // Skip if we've already loaded a command with this name
+                    if (loadedCommandNames.has(commandName)) {
+                        console.log(`[WARNING] Skipping duplicate command: ${commandName} from ${wrapperFile}`);
+                        continue;
+                    }
+                    
+                    client.slashCommands.set(commandName, command);
+                    loadedCommandNames.add(commandName);
+                    console.log(`Loaded slash command: ${commandName} from ${wrapperFile}`);
+                }
+            } else {
+                console.log(`[WARNING] The subdirectory wrapper at ${filePath} is missing a required "data" or "execute" property.`);
+            }
+        } catch (error) {
+            console.error(`[ERROR] Failed to load subdirectory wrapper at ${filePath}:`, error);
         }
     }
 }
@@ -294,26 +386,9 @@ client.once(Events.ClientReady, async () => {
 async function registerSlashCommands() {
     try {
         const commandsToRegister = [];
-        const seenNames = new Set();
-        
-        // First, collect all command names to detect duplicates
-        // This initial pass helps us identify which commands are coming from multiple files
-        for (const [name, command] of client.slashCommands) {
-            if (command.data) {
-                if (Array.isArray(command.data)) {
-                    for (const cmdData of command.data) {
-                        seenNames.add(cmdData.name);
-                    }
-                } else {
-                    seenNames.add(command.data.name);
-                }
-            }
-        }
-        
-        // Now we clear the collection and keep track of what we've already added
         const registeredCommands = new Set();
         
-        // Add all slash commands to the array, handling duplicates properly
+        // Add all slash commands to the array, making sure to only register each unique command name once
         for (const [name, command] of client.slashCommands) {
             if (command.data) {
                 if (Array.isArray(command.data)) {
@@ -321,11 +396,13 @@ async function registerSlashCommands() {
                         if (typeof cmdData.toJSON === "function" && !registeredCommands.has(cmdData.name)) {
                             commandsToRegister.push(cmdData.toJSON());
                             registeredCommands.add(cmdData.name);
+                            console.log(`Registering command: ${cmdData.name}`);
                         }
                     }
                 } else if (typeof command.data.toJSON === "function" && !registeredCommands.has(command.data.name)) {
                     commandsToRegister.push(command.data.toJSON());
                     registeredCommands.add(command.data.name);
+                    console.log(`Registering command: ${command.data.name}`);
                 }
             }
         }
@@ -362,12 +439,40 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         // Handle button interactions first
         if (interaction.isButton()) {
-            // Find the command that might be handling this button
+            // Handle ticket system buttons
+            const { TicketPanelView, TicketControlView } = require('./utils/ticketComponents');
+            
+            // Check which button was clicked
+            switch (interaction.customId) {
+                case 'open_ticket_button':
+                    await TicketPanelView.handleOpenTicket(interaction);
+                    return;
+                case 'ticket_claim':
+                    await TicketControlView.handleClaimTicket(interaction);
+                    return;
+                case 'ticket_close':
+                    await TicketControlView.handleCloseTicket(interaction);
+                    return;
+                case 'ticket_delete':
+                    await TicketControlView.handleDeleteTicket(interaction);
+                    return;
+            }
+            
+            // If not handled by ticket system, try other command handlers
             for (const [_, command] of client.slashCommands) {
                 if (command.handleButton && await command.handleButton(interaction, client)) {
                     // If a command handled this button, stop processing
                     return;
                 }
+            }
+        }
+        
+        // Handle modal submissions
+        if (interaction.isModalSubmit()) {
+            if (interaction.customId === 'ticket_issue_modal') {
+                const { TicketPanelView } = require('./utils/ticketComponents');
+                await TicketPanelView.handleTicketModal(interaction);
+                return;
             }
         }
         
@@ -391,10 +496,19 @@ client.on(Events.InteractionCreate, async interaction => {
             ephemeral: true 
         };
         
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(errorReply);
-        } else {
-            await interaction.reply(errorReply);
+        // Only attempt to reply if the interaction hasn't been responded to yet
+        if (!interaction.replied && !interaction.deferred) {
+            try {
+                await interaction.reply(errorReply);
+            } catch (replyError) {
+                console.error('Could not reply to interaction:', replyError);
+            }
+        } else if (interaction.replied) {
+            try {
+                await interaction.followUp(errorReply);
+            } catch (followUpError) {
+                console.error('Could not follow up on interaction:', followUpError);
+            }
         }
     }
 });

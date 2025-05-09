@@ -21,6 +21,7 @@ const history = require('./history');
 const autoplay = require('./autoplay');
 const djrole = require('./djrole');
 const queueManage = require('./queueManage');
+const search = require('./search');
 
 // Create the composite command
 module.exports = {
@@ -121,6 +122,13 @@ module.exports = {
                     .setDescription('Position in the queue (starting from 1)')
                     .setMinValue(1)
                     .setRequired(true)),
+        new SlashCommandBuilder()
+            .setName('search')
+            .setDescription('Search for songs and select one to play')
+            .addStringOption(option =>
+                option.setName('query')
+                    .setDescription('Song name to search for')
+                    .setRequired(true)),
     ],
     
     // Command handler
@@ -171,6 +179,8 @@ module.exports = {
                 return queueManage.move(interaction, client);
             case 'remove':
                 return queueManage.remove(interaction, client);
+            case 'search':
+                return search.execute(interaction, client);
             default:
                 return interaction.reply({ 
                     content: 'Unknown music command', 

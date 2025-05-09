@@ -1,92 +1,151 @@
-const mongoose = require('mongoose');
+const { getDb, connect } = require('./database');
 
-// Define schema for ticket system configuration per guild
-const ticketSettingsSchema = new mongoose.Schema({
-    guildId: { type: String, required: true, unique: true },
-    categoryOpen: { type: String, required: true },
-    categoryArchive: { type: String, required: true },
-    supportRoles: [{ type: String }],
-    logChannel: { type: String }
-});
+// Collection names
+const COLLECTIONS = {
+    SETTINGS: 'ticketsettings',
+    TICKETS: 'tickets'
+};
 
-// Define schema for individual tickets
-const ticketSchema = new mongoose.Schema({
-    channelId: { type: String, required: true, unique: true },
-    guildId: { type: String, required: true },
-    creatorId: { type: String, required: true },
-    claimedBy: { type: String, default: null },
-    status: { type: String, enum: ['open', 'closed'], default: 'open' },
-    participants: [{ type: String }],
-    createdAt: { type: Date, default: Date.now }
-});
+// Helper function to ensure database connection
+async function ensureDbConnection() {
+    try {
+        await connect();
+        return getDb();
+    } catch (error) {
+        console.error('Failed to connect to database:', error);
+        throw error;
+    }
+}
 
-// Create models
-const TicketSettings = mongoose.model('TicketSettings', ticketSettingsSchema);
-const Ticket = mongoose.model('Ticket', ticketSchema);
+// Helper function for retrying database operations
+async function withRetry(operation, maxRetries = 3) {
+    let lastError;
+    let delay = 500;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const db = await ensureDbConnection();
+            return await operation(db);
+        } catch (error) {
+            console.error(`Database operation attempt ${attempt}/${maxRetries} failed:`, error.message);
+            lastError = error;
+            
+            if (attempt < maxRetries) {
+                console.log(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; // Exponential backoff
+            }
+        }
+    }
+    
+    throw lastError;
+}
 
 // Functions to interact with the database
 module.exports = {
     // Guild settings functions
     async getGuildSettings(guildId) {
-        return await TicketSettings.findOne({ guildId });
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.SETTINGS).findOne({ guildId }, { maxTimeMS: 5000 });
+        });
     },
 
     async setGuildSettings(guildId, categoryOpen, categoryArchive, supportRoles, logChannel) {
-        return await TicketSettings.findOneAndUpdate(
-            { guildId },
-            { 
-                guildId, 
-                categoryOpen, 
-                categoryArchive, 
-                supportRoles, 
-                logChannel 
-            },
-            { upsert: true, new: true }
-        );
+        return await withRetry(async (db) => {
+            const result = await db.collection(COLLECTIONS.SETTINGS).findOneAndUpdate(
+                { guildId },
+                { 
+                    $set: { 
+                        guildId, 
+                        categoryOpen, 
+                        categoryArchive, 
+                        supportRoles, 
+                        logChannel 
+                    }
+                },
+                { upsert: true, returnDocument: 'after', maxTimeMS: 5000 }
+            );
+            return result.value;
+        });
     },
 
     // Ticket functions
     async createTicket(channelId, guildId, creatorId, participants) {
-        return await Ticket.create({
-            channelId,
-            guildId,
-            creatorId,
-            participants
+        return await withRetry(async (db) => {
+            const newTicket = {
+                channelId,
+                guildId,
+                creatorId,
+                claimedBy: null,
+                status: 'open',
+                participants: participants || [],
+                createdAt: new Date()
+            };
+            
+            await db.collection(COLLECTIONS.TICKETS).insertOne(newTicket, { maxTimeMS: 5000 });
+            return newTicket;
         });
     },
 
     async getTicket(channelId) {
-        return await Ticket.findOne({ channelId });
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.TICKETS).findOne({ channelId }, { maxTimeMS: 5000 });
+        });
     },
 
     async updateTicket(channelId, updateData) {
-        return await Ticket.findOneAndUpdate(
-            { channelId },
-            updateData,
-            { new: true }
-        );
+        return await withRetry(async (db) => {
+            const result = await db.collection(COLLECTIONS.TICKETS).findOneAndUpdate(
+                { channelId },
+                { $set: updateData },
+                { returnDocument: 'after', maxTimeMS: 5000 }
+            );
+            return result.value;
+        });
     },
 
     async deleteTicket(channelId) {
-        return await Ticket.findOneAndDelete({ channelId });
+        return await withRetry(async (db) => {
+            const result = await db.collection(COLLECTIONS.TICKETS).findOneAndDelete(
+                { channelId },
+                { maxTimeMS: 5000 }
+            );
+            return result.value;
+        });
     },
 
     async getGuildTickets(guildId) {
-        return await Ticket.find({ guildId });
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.TICKETS).find({ guildId })
+                .maxTimeMS(5000)
+                .toArray();
+        });
     },
 
     async getOpenTickets(guildId) {
-        return await Ticket.find({ guildId, status: 'open' });
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.TICKETS).find({ guildId, status: 'open' })
+                .maxTimeMS(5000)
+                .toArray();
+        });
     },
 
     async getClosedTickets(guildId) {
-        return await Ticket.find({ guildId, status: 'closed' });
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.TICKETS).find({ guildId, status: 'closed' })
+                .maxTimeMS(5000)
+                .toArray();
+        });
     },
 
     async getUserTickets(guildId, userId) {
-        return await Ticket.find({ 
-            guildId, 
-            $or: [{ creatorId: userId }, { participants: userId }]
+        return await withRetry(async (db) => {
+            return await db.collection(COLLECTIONS.TICKETS).find({ 
+                guildId, 
+                $or: [{ creatorId: userId }, { participants: userId }]
+            })
+                .maxTimeMS(5000)
+                .toArray();
         });
     }
 };
