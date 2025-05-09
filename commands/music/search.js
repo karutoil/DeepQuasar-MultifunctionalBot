@@ -12,6 +12,13 @@ module.exports = {
             return interaction.reply({ embeds: [check.embed], ephemeral: true });
         }
         
+        /* 
+         * This command implements a fully button-based search interface:
+         * - Buttons are used for both pagination (prev/next/cancel) and track selection
+         * - This is faster and more reliable than using emoji reactions
+         * - Provides a consistent UI experience for users
+         */
+        
         const voiceChannel = check.voiceChannel;
         const manager = client.musicManager;
         const query = interaction.options.getString('query');
@@ -69,10 +76,7 @@ module.exports = {
                 };
             };
             
-            // Create description with numbered results (0-9)
-            const emojis = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
-            const navigationEmojis = ['⏪', '⏩'];
-            
+            // Create description with numbered results (1-10)
             // Function to get tracks for the current page
             const getPageTracks = (page) => {
                 const startIdx = page * tracksPerPage;
@@ -86,12 +90,12 @@ module.exports = {
                 
                 tracks.forEach((track, index) => {
                     const info = getTrackInfo(track);
-                    description += `${emojis[index]} [${info.title}](${info.uri}) - ${info.author} • ${formatDuration(info.duration)}\n`;
+                    description += `${index + 1}. [${info.title}](${info.uri}) - ${info.author} • ${formatDuration(info.duration)}\n`;
                 });
                 
-                description += '\n*Use the reactions below to select a track to play*';
+                description += '\n*Use the buttons below to select a track or navigate pages*';
                 if (totalPages > 1) {
-                    description += `\n\nPage ${page + 1}/${totalPages} • Use ⏪ and ⏩ to navigate`;
+                    description += `\n\nPage ${page + 1}/${totalPages}`;
                 }
                 
                 // Create the embed
@@ -114,59 +118,77 @@ module.exports = {
                 return embed;
             };
             
-            // Create buttons for pagination and cancellation
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('cancel')
-                        .setLabel('Cancel')
-                        .setStyle(ButtonStyle.Secondary)
-                        .setEmoji('❌')
-                );
-            
-            const message = await interaction.editReply({ 
-                embeds: [generateEmbed(currentPage)],
-                components: [row]
-            });
-            
-            // Add reactions for the first page in parallel
-            const currentTracks = getPageTracks(currentPage);
-            
-            // Create an array of reaction promises
-            const reactionPromises = [];
-            
-            // Add number reactions
-            for (let i = 0; i < currentTracks.length; i++) {
-                reactionPromises.push(message.react(emojis[i]));
-            }
-            
-            // Add navigation reactions if multiple pages
-            if (totalPages > 1) {
-                reactionPromises.push(message.react(navigationEmojis[0])); // ⏪
-                reactionPromises.push(message.react(navigationEmojis[1])); // ⏩
-            }
-            
-            // Execute all reaction promises in parallel
-            // This significantly improves the speed of adding initial reactions (from 5-10s to <1s)
-            await Promise.all(reactionPromises);
-            
-            // Create collectors
-            const filter = (reaction, user) => {
-                return (emojis.includes(reaction.emoji.name) || navigationEmojis.includes(reaction.emoji.name)) 
-                    && user.id === interaction.user.id;
+            // Create buttons for pagination, track selection, and cancellation
+            const createButtons = (currentPage) => {
+                // Navigation row
+                const navRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId('prev')
+                            .setLabel('⏪ Previous')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(currentPage === 0),
+                        new ButtonBuilder()
+                            .setCustomId('cancel')
+                            .setLabel('Cancel')
+                            .setStyle(ButtonStyle.Secondary)
+                            .setEmoji('❌'),
+                        new ButtonBuilder()
+                            .setCustomId('next')
+                            .setLabel('Next ⏩')
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(currentPage >= totalPages - 1)
+                    );
+                
+                // Create selection buttons for tracks (up to 5 per row, max 2 rows = 10 tracks)
+                const currentTracks = getPageTracks(currentPage);
+                const selectionRows = [];
+                
+                // First row (tracks 1-5)
+                if (currentTracks.length > 0) {
+                    const selectionRow1 = new ActionRowBuilder();
+                    for (let i = 0; i < Math.min(5, currentTracks.length); i++) {
+                        selectionRow1.addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`select_${i}`)
+                                .setLabel(`${i + 1}`)
+                                .setStyle(ButtonStyle.Success)
+                        );
+                    }
+                    selectionRows.push(selectionRow1);
+                }
+                
+                // Second row (tracks 6-10) if needed
+                if (currentTracks.length > 5) {
+                    const selectionRow2 = new ActionRowBuilder();
+                    for (let i = 5; i < Math.min(10, currentTracks.length); i++) {
+                        selectionRow2.addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`select_${i}`)
+                                .setLabel(`${i + 1}`)
+                                .setStyle(ButtonStyle.Success)
+                        );
+                    }
+                    selectionRows.push(selectionRow2);
+                }
+                
+                // Return all button rows with navigation and selection
+                return [navRow, ...selectionRows];
             };
             
+            // Send initial message with buttons for both navigation and track selection
+            const message = await interaction.editReply({ 
+                embeds: [generateEmbed(currentPage)],
+                components: createButtons(currentPage)
+            });
+            
+            // Only need a button collector since we're using buttons for everything now
             const buttonFilter = i => i.user.id === interaction.user.id;
             
-            // Set a longer timeout (2 minutes)
+            // Set a timeout (2 minutes)
             const collectorOptions = { 
                 time: 120000  // 2 minutes
             };
-            
-            const reactionCollector = message.createReactionCollector({ 
-                filter, 
-                ...collectorOptions 
-            });
             
             const buttonCollector = message.createMessageComponentCollector({ 
                 filter: buttonFilter,
@@ -174,116 +196,10 @@ module.exports = {
                 ...collectorOptions
             });
             
-            // Handle reaction selection
-            reactionCollector.on('collect', async (reaction, user) => {
-                const emojiName = reaction.emoji.name;
-                
-                // Handle navigation reactions
-                if (navigationEmojis.includes(emojiName)) {
-                    // Remove user's reaction
-                    await reaction.users.remove(user.id).catch(console.error);
-                    
-                    // Update current page
-                    if (emojiName === navigationEmojis[0] && currentPage > 0) {
-                        // Previous page
-                        currentPage--;
-                    } else if (emojiName === navigationEmojis[1] && currentPage < totalPages - 1) {
-                        // Next page
-                        currentPage++;
-                    } else {
-                        return; // Invalid navigation
-                    }
-                    
-                    // Update message with new page content only
-                    await message.edit({ embeds: [generateEmbed(currentPage)] });
-                    
-                    return;
-                }
-                
-                // Handle track selection
-                const emojiIndex = emojis.indexOf(emojiName);
-                const currentPageTracks = getPageTracks(currentPage);
-                
-                if (emojiIndex >= 0 && emojiIndex < currentPageTracks.length) {
-                    // Stop collectors
-                    reactionCollector.stop();
-                    buttonCollector.stop();
-                    
-                    const selectedTrack = currentPageTracks[emojiIndex];
-                    
-                    // Add track to queue
-                    player.queue.add(selectedTrack);
-                    
-                    // Play if not already playing
-                    if (!player.playing) {
-                        await player.play();
-                        
-                        // Restore saved volume
-                        try {
-                            const volumeNormalized = await musicModel.getVolume(guildId);
-                            await player.setVolume(Math.floor(volumeNormalized * 100));
-                        } catch (error) {
-                            console.error('Error setting volume:', error);
-                        }
-                        
-                        const info = getTrackInfo(selectedTrack);
-                        
-                        const playingEmbed = new EmbedBuilder()
-                            .setColor('#2ECC71')
-                            .setTitle('🎵 Now Playing')
-                            .setDescription(`**[${info.title}](${info.uri})**`)
-                            .addFields(
-                                { name: 'Artist', value: info.author, inline: true },
-                                { name: 'Duration', value: formatDuration(info.duration), inline: true },
-                                { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true }
-                            )
-                            .setTimestamp();
-                        
-                        if (info.thumbnail) {
-                            playingEmbed.setThumbnail(info.thumbnail);
-                        }
-                        
-                        await message.edit({ 
-                            embeds: [playingEmbed],
-                            components: []
-                        });
-                    } else {
-                        const info = getTrackInfo(selectedTrack);
-                        
-                        const queuedEmbed = new EmbedBuilder()
-                            .setColor('#3498DB')
-                            .setTitle('➕ Added to Queue')
-                            .setDescription(`**[${info.title}](${info.uri})**`)
-                            .addFields(
-                                { name: 'Artist', value: info.author, inline: true },
-                                { name: 'Duration', value: formatDuration(info.duration), inline: true },
-                                { name: 'Position', value: `${player.queue.tracks.length}`, inline: true }
-                            )
-                            .setTimestamp();
-                        
-                        if (info.thumbnail) {
-                            queuedEmbed.setThumbnail(info.thumbnail);
-                        }
-                        
-                        await message.edit({ 
-                            embeds: [queuedEmbed],
-                            components: []
-                        });
-                    }
-                }
-                
-                // Try to remove all reactions
-                try {
-                    await message.reactions.removeAll();
-                } catch (error) {
-                    console.error('Failed to remove reactions:', error);
-                }
-            });
-            
-            // Handle button interaction (cancel)
+            // Handle all button interactions (track selection, pagination, and cancel)
             buttonCollector.on('collect', async (i) => {
+                // Handle cancel button
                 if (i.customId === 'cancel') {
-                    reactionCollector.stop();
                     buttonCollector.stop();
                     
                     const cancelEmbed = new EmbedBuilder()
@@ -297,18 +213,115 @@ module.exports = {
                         components: [] 
                     });
                     
-                    // Try to remove all reactions
-                    try {
-                        await message.reactions.removeAll();
-                    } catch (error) {
-                        console.error('Failed to remove reactions:', error);
+                    return;
+                }
+                
+                // Handle pagination - Previous page
+                else if (i.customId === 'prev' && currentPage > 0) {
+                    // Go to previous page
+                    currentPage--;
+                    
+                    // Update message with new page and buttons
+                    await i.update({
+                        embeds: [generateEmbed(currentPage)],
+                        components: createButtons(currentPage)
+                    });
+                    
+                    return;
+                }
+                
+                // Handle pagination - Next page
+                else if (i.customId === 'next' && currentPage < totalPages - 1) {
+                    // Go to next page
+                    currentPage++;
+                    
+                    // Update message with new page and buttons
+                    await i.update({
+                        embeds: [generateEmbed(currentPage)],
+                        components: createButtons(currentPage)
+                    });
+                    
+                    return;
+                }
+                
+                // Handle track selection
+                else if (i.customId.startsWith('select_')) {
+                    // Extract the track index from the button ID
+                    const index = parseInt(i.customId.split('_')[1]);
+                    const currentPageTracks = getPageTracks(currentPage);
+                    
+                    if (index >= 0 && index < currentPageTracks.length) {
+                        // Stop collector
+                        buttonCollector.stop();
+                        
+                        const selectedTrack = currentPageTracks[index];
+                        
+                        // Add track to queue
+                        player.queue.add(selectedTrack);
+                        
+                        // Play if not already playing
+                        if (!player.playing) {
+                            await player.play();
+                            
+                            // Restore saved volume
+                            try {
+                                const volumeNormalized = await musicModel.getVolume(guildId);
+                                await player.setVolume(Math.floor(volumeNormalized * 100));
+                            } catch (error) {
+                                console.error('Error setting volume:', error);
+                            }
+                            
+                            const info = getTrackInfo(selectedTrack);
+                            
+                            const playingEmbed = new EmbedBuilder()
+                                .setColor('#2ECC71')
+                                .setTitle('🎵 Now Playing')
+                                .setDescription(`**[${info.title}](${info.uri})**`)
+                                .addFields(
+                                    { name: 'Artist', value: info.author, inline: true },
+                                    { name: 'Duration', value: formatDuration(info.duration), inline: true },
+                                    { name: 'Requested By', value: `<@${interaction.user.id}>`, inline: true }
+                                )
+                                .setTimestamp();
+                            
+                            if (info.thumbnail) {
+                                playingEmbed.setThumbnail(info.thumbnail);
+                            }
+                            
+                            await i.update({ 
+                                embeds: [playingEmbed],
+                                components: []
+                            });
+                        } else {
+                            const info = getTrackInfo(selectedTrack);
+                            
+                            const queuedEmbed = new EmbedBuilder()
+                                .setColor('#3498DB')
+                                .setTitle('➕ Added to Queue')
+                                .setDescription(`**[${info.title}](${info.uri})**`)
+                                .addFields(
+                                    { name: 'Artist', value: info.author, inline: true },
+                                    { name: 'Duration', value: formatDuration(info.duration), inline: true },
+                                    { name: 'Position', value: `${player.queue.tracks.length}`, inline: true }
+                                )
+                                .setTimestamp();
+                            
+                            if (info.thumbnail) {
+                                queuedEmbed.setThumbnail(info.thumbnail);
+                            }
+                            
+                            await i.update({ 
+                                embeds: [queuedEmbed],
+                                components: []
+                            });
+                        }
                     }
                 }
             });
             
             // Handle timeout
-            reactionCollector.on('end', async (collected, reason) => {
-                if (reason === 'time' && collected.size === 0) {
+            buttonCollector.on('end', async (collected, reason) => {
+                if (reason === 'time') {
                     const timeoutEmbed = new EmbedBuilder()
                         .setColor('#E74C3C')
                         .setTitle('⏰ Timed Out')
@@ -319,13 +332,6 @@ module.exports = {
                         embeds: [timeoutEmbed],
                         components: []
                     });
-                    
-                    // Try to remove all reactions
-                    try {
-                        await message.reactions.removeAll();
-                    } catch (error) {
-                        console.error('Failed to remove reactions:', error);
-                    }
                 }
             });
             
