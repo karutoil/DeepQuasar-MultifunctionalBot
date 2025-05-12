@@ -516,14 +516,29 @@ client.on(Events.InteractionCreate, async interaction => {
 // Handle process shutdown to clean up resources
 async function gracefulShutdown() {
     console.log('Shutting down the bot gracefully...');
-    
+
     try {
+        // Check if dev mode is enabled
+        const isDevMode = process.env.dev === 'true';
+
+        if (isDevMode) {
+            console.log('Dev mode enabled. Clearing slash commands...');
+
+            try {
+                // Clear commands for all guilds the bot is part of
+                await client.application.commands.set([]);
+                console.log('Cleared all slash commands globally.');
+            } catch (error) {
+                console.error('Error clearing slash commands:', error);
+            }
+        }
+
         // Clean up update notifier
         if (client.updateNotifier) {
             client.updateNotifier.stop();
             console.log('Update notifier service stopped');
         }
-        
+
         // Destroy all music players
         if (client.musicManager) {
             try {
@@ -538,14 +553,14 @@ async function gracefulShutdown() {
                 console.error('Error destroying music players:', err);
             }
         }
-        
+
         // Log out from Discord
         if (client.isReady()) {
             console.log('Logging out from Discord...');
             await client.destroy();
             console.log('Successfully logged out from Discord');
         }
-        
+
         console.log('Shutdown complete!');
     } catch (error) {
         console.error('Error during graceful shutdown:', error);
