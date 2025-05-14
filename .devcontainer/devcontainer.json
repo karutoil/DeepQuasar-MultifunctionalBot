@@ -1,9 +1,12 @@
 {
-  "name": "Node.js Development Container",
+  "name": "Node.js with Docker Development Container",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:latest",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
     }
   },
   "postCreateCommand": "npm install",
@@ -11,7 +14,8 @@
     "vscode": {
       "extensions": [
         "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
       ]
     }
   },
@@ -23,5 +27,9 @@
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
   ],
-  "remoteUser": "node"
+  "remoteUser": "node",
+  "runArgs": [
+    "--privileged"
+  ],
+  "overrideCommand": false
 }
