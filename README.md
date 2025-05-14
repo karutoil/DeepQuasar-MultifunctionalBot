@@ -19,6 +19,7 @@ DeepQuasar is a comprehensive Discord bot solution that combines multiple functi
 - 👥 **Auto Role**: Automatically assign roles to new members
 - 🏆 **Invite Tracking**: Track and display invite leaderboards
 - 🔔 **Update Notifier**: Get notifications about bot updates automatically
+- 🔄 **Automatic Version Increment**: Patch version automatically increments with each commit
 
 ## Installation & Setup
 
@@ -184,6 +185,21 @@ LOCALAI_MODEL=your_model_name
 # Update Notifier
 GITHUB_API_TOKEN=your_github_token  # Optional: for higher API rate limits
 ```
+
+## Git Hooks
+
+This project uses Git hooks to automatically increment the version number with each commit. When you clone this repository, you'll need to set up the hooks:
+
+```bash
+# Tell Git to use the hooks in the .githooks directory
+git config core.hooksPath .githooks
+```
+
+The hooks include:
+- **pre-commit**: Automatically increments the patch version in package.json before each commit
+- **post-commit**: Cleans up temporary files used by the version increment process
+
+For more details about the automatic version increment system, see [docs/version-increment.md](docs/version-increment.md).
 
 ## Credits
 
