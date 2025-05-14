@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Run the version increment script
+node scripts/version-increment.js
+
+# If the script failed, abort the commit
+if [ $? -ne 0 ]; then
+  echo "Version increment failed, aborting commit"
+  exit 1
+fi
+
+# Continue with the commit
+exit 0

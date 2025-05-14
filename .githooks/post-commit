@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Clean up any lingering commit locks to prevent issues with future commits
+if [ -f .commit-lock ]; then
+  rm .commit-lock
+  echo "Removed lingering commit lock"
+fi
+
+exit 0
