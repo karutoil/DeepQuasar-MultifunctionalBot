@@ -8,10 +8,10 @@ const {
     Routes
 } = require('discord.js');
 const { connect } = require('./models/database');
-const UpdateNotifierService = require('./utils/updateNotifierService');
 const fs = require('fs');
 const path = require('path');
 const { LavalinkManager } = require('lavalink-client');
+const { checkForUpdates } = require('./updateNotifier');
 
 // Set up intents
 const client = new Client({
@@ -209,19 +209,6 @@ function loadEvents() {
     }
 }
 
-// Initialize update notifier service
-function initUpdateNotifier() {
-    try {
-        client.updateNotifier = new UpdateNotifierService(client);
-        console.log('Update notifier service initialized!');
-        
-        // Start the service - this will check if it's enabled in the DB
-        client.updateNotifier.start();
-    } catch (error) {
-        console.error('Failed to initialize update notifier service:', error);
-    }
-}
-
 // Function to generate invite link
 async function generateInviteLink() {
     try {
@@ -279,6 +266,9 @@ async function generateInviteLink() {
 client.once(Events.ClientReady, async () => {
     console.log(`Logged in as ${client.user.tag}`);
     
+    // Check for updates when the bot is ready
+    checkForUpdates(client);
+
     // Set watching status with server and member count
     const totalGuilds = client.guilds.cache.size;
     const totalMembers = client.guilds.cache.reduce((acc, guild) => acc + (guild.memberCount || 0), 0);
@@ -377,9 +367,6 @@ client.once(Events.ClientReady, async () => {
             }
         }
     }
-
-    // Initialize services
-    initUpdateNotifier();
 });
 
 // Function to register slash commands with Discord API
@@ -531,12 +518,6 @@ async function gracefulShutdown() {
             } catch (error) {
                 console.error('Error clearing slash commands:', error);
             }
-        }
-
-        // Clean up update notifier
-        if (client.updateNotifier) {
-            client.updateNotifier.stop();
-            console.log('Update notifier service stopped');
         }
 
         // Destroy all music players

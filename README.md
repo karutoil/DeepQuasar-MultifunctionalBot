@@ -144,17 +144,6 @@ Deploy using our pre-built Docker image from Docker Hub.
 |---------|-------------|-------------|
 | `/invites leaderboard` | Show the top invites leaderboard | None |
 
-### 🔔 Update Notifier
-
-| Command | Description | Permissions |
-|---------|-------------|-------------|
-| `/updatenotifier status` | Check update notifier status | Administrator |
-| `/updatenotifier enable` | Enable update notifications | Administrator |
-| `/updatenotifier disable` | Disable update notifications | Administrator |
-| `/updatenotifier setowner [user]` | Set user to receive update notifications | Administrator |
-| `/updatenotifier settoken [token]` | Set GitHub API token for higher rate limits | Administrator |
-| `/updatenotifier check` | Check for updates manually | Administrator |
-
 ## Environment Variables
 
 The bot uses a `.env` file for configuration. Copy `.env.example` to `.env` and set the following variables:
