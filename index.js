@@ -369,6 +369,12 @@ client.once(Events.ClientReady, async () => {
     }
 });
 
+// Add a weekly update check
+setInterval(() => {
+    console.log('Checking for updates...');
+    checkForUpdates(client);
+}, 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
+
 // Function to register slash commands with Discord API
 async function registerSlashCommands() {
     try {
