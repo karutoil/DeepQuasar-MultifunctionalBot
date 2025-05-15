@@ -5,7 +5,7 @@ const { Client, Intents } = require('discord.js');
 require('dotenv').config();
 
 const GITHUB_PACKAGE_JSON_URL = process.env.GITHUB_PACKAGE_JSON_URL;
-const localPackageJsonPath = path.join(__dirname, 'package.json');
+const localPackageJsonPath = path.join(__dirname, '../package.json');
 
 async function checkForUpdates(client) {
   try {

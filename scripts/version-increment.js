@@ -10,6 +10,7 @@ const path = require('path');
 
 // Get the package.json path
 const packageJsonPath = path.join(__dirname, '..', 'package.json');
+const packageJsonLockPath = path.join(__dirname, '..', 'package-lock.json');
 
 // Flag to prevent recursive commits
 const COMMIT_LOCK_FILE = path.join(__dirname, '..', '.commit-lock');
@@ -26,6 +27,7 @@ fs.writeFileSync(COMMIT_LOCK_FILE, Date.now().toString());
 try {
   // Read the package.json file
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJsonLock = JSON.parse(fs.readFileSync(packageJsonLockPath, 'utf8'));
   
   // Get the current version
   const currentVersion = packageJson.version;
@@ -43,12 +45,13 @@ try {
   
   // Write the updated package.json back to file
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+  fs.writeFileSync(packageJsonLockPath, JSON.stringify(packageJsonLock, null, 2) + '\n');
   
   console.log(`Version incremented: ${currentVersion} → ${newVersion}`);
   
   // Add the package.json to the git staging area
   const { execSync } = require('child_process');
-  execSync('git add package.json');
+  execSync('git add package.json package-lock.json');
   
   console.log('Updated package.json added to commit');
 } catch (error) {

@@ -11,7 +11,7 @@ const { connect } = require('./models/database');
 const fs = require('fs');
 const path = require('path');
 const { LavalinkManager } = require('lavalink-client');
-const { checkForUpdates } = require('./updateNotifier');
+const { checkForUpdates } = require('./utils/updateNotifier');
 
 // Set up intents
 const client = new Client({
