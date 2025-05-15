@@ -197,7 +197,7 @@ This bot was created with the assistance of:
 - ChatGPT 4.1
 - Claude 3.7 Sonnet
 
-Maintained by the DeepQuasar team.
+Maintained by Karutoil.
 
 ## License
 
