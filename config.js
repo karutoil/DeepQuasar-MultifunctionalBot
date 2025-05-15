@@ -19,7 +19,8 @@ module.exports = {
             modLog: 'mod_log',
             music: 'music',
             welcomeLeave: 'welcome_leave',
-            reactionRoles: 'reaction_roles'
+            reactionRoles: 'reaction_roles',
+            reactionRoleMessages: 'reaction_role_messages'
         }
     },
     

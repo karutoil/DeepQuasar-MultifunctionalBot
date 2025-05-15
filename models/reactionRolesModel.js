@@ -51,6 +51,46 @@ class ReactionRolesModel {
     }
 
     /**
+     * Add or update a button-based role configuration
+     * @param {string} messageId - Discord Message ID
+     * @param {string} channelId - Discord Channel ID
+     * @param {string} guildId - Discord Guild ID
+     * @param {string} title - Title for the role embed
+     * @param {number} color - Embed color in decimal format
+     * @param {string} label - The label for the button
+     * @param {string} buttonColor - The button color (primary, secondary, success, danger)
+     * @param {string} roleId - Discord Role ID
+     * @returns {Promise<object>} MongoDB update result
+     */
+    async addRoleButton(messageId, channelId, guildId, title, color, label, buttonColor, roleId) {
+        // Update message info
+        await this.messagesCollection.updateOne(
+            { message_id: messageId },
+            {
+                $set: {
+                    channel_id: channelId,
+                    guild_id: guildId,
+                    title: title,
+                    color: color
+                }
+            },
+            { upsert: true }
+        );
+
+        // Update button role
+        return await this.rolesCollection.updateOne(
+            { message_id: messageId, label: label },
+            {
+                $set: {
+                    role_id: roleId,
+                    button_color: buttonColor
+                }
+            },
+            { upsert: true }
+        );
+    }
+
+    /**
      * Get all reaction roles for a message
      * @param {string} messageId - Discord Message ID
      * @returns {Promise<Array>} Array of [emoji, roleId, description] tuples
