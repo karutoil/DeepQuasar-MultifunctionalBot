@@ -31,6 +31,7 @@ try {
   
   // Get the current version
   const currentVersion = packageJson.version;
+  const currentVersionLock = packageJsonLock.version;
   console.log(`Current version: ${currentVersion}`);
   
   // Split the version into parts
@@ -42,6 +43,7 @@ try {
   
   // Update the version in the package.json object
   packageJson.version = newVersion;
+  packageJsonLock.version = newVersion;
   
   // Write the updated package.json back to file
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
