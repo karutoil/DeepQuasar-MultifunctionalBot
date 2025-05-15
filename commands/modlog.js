@@ -97,7 +97,7 @@ module.exports = {
         if (!channel.isTextBased() || channel.guildId !== guildId) {
             return interaction.reply({
                 content: '❌ Please select a text channel from this server.',
-                ephemeral: true
+                flags: 64
             });
         }
         
@@ -107,7 +107,7 @@ module.exports = {
             if (!permissions.has('SendMessages') || !permissions.has('EmbedLinks')) {
                 return interaction.reply({
                     content: `❌ I don't have permission to send messages or embeds in ${channel}.`,
-                    ephemeral: true
+                    flags: 64
                 });
             }
             
@@ -122,14 +122,14 @@ module.exports = {
             // Confirm to the user
             return interaction.reply({
                 content: `✅ Modlog channel set to ${channel}.`,
-                ephemeral: false
+                flags: 0
             });
             
         } catch (error) {
             console.error(`Error setting modlog channel for ${guildId}:`, error);
             return interaction.reply({
                 content: '❌ An error occurred while setting the modlog channel.',
-                ephemeral: true
+                flags: 64
             });
         }
     },
@@ -143,7 +143,7 @@ module.exports = {
         if (!Object.keys(EVENT_TYPES_DISPLAY).includes(event)) {
             return interaction.reply({
                 content: '❌ Invalid event type.',
-                ephemeral: true
+                flags: 64
             });
         }
         
@@ -162,14 +162,14 @@ module.exports = {
             // Confirm to the user
             return interaction.reply({
                 content: `✅ ${EVENT_TYPES_DISPLAY[event]} logs have been ${enabled ? 'enabled' : 'disabled'}.`,
-                ephemeral: false
+                flags: 0
             });
             
         } catch (error) {
             console.error(`Error toggling modlog event for ${guildId}:`, error);
             return interaction.reply({
                 content: '❌ An error occurred while updating the modlog settings.',
-                ephemeral: true
+                flags: 64
             });
         }
     },
@@ -196,14 +196,14 @@ module.exports = {
             // Confirm to the user
             return interaction.reply({
                 content: `✅ All modlog events have been ${enabled ? 'enabled' : 'disabled'}.`,
-                ephemeral: false
+                flags: 0
             });
             
         } catch (error) {
             console.error(`Error setting all modlog events for ${guildId}:`, error);
             return interaction.reply({
                 content: '❌ An error occurred while updating the modlog settings.',
-                ephemeral: true
+                flags: 64
             });
         }
     },

@@ -44,7 +44,7 @@ async function checkPermissions(interaction, sendReply = true) {
         if (sendReply) {
             await interaction.reply({ 
                 content: "You don't have permission to use this command!", 
-                ephemeral: true 
+                flags: 64 
             });
         }
         return false;

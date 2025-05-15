@@ -9,7 +9,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'autoplay');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // Check DJ permissions
@@ -20,7 +20,7 @@ module.exports = {
                 .setTitle('❌ DJ Only')
                 .setDescription('You need the DJ role to use this command.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const manager = client.musicManager;
@@ -32,7 +32,7 @@ module.exports = {
                 .setTitle('❌ Nothing Playing')
                 .setDescription('There is nothing currently playing to enable autoplay for.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         // Toggle the autoplay state

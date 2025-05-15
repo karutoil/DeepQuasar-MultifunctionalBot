@@ -142,7 +142,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
         content: `${contentDisplay}Interactive embed builder started! Edit your embed using the buttons below:`,
         embeds: [initialEmbed],
         components: [row1, row2, row3, row4, row5],
-        ephemeral: true,
+        flags: 64,
         fetchReply: true
     });
     
@@ -427,7 +427,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 if (!embed.data.fields || embed.data.fields.length === 0) {
                     await i.reply({
                         content: 'There are no fields to edit.',
-                        ephemeral: true
+                        flags: 64
                     });
                     break;
                 }
@@ -450,7 +450,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 const selectMessage = await i.reply({
                     content: 'Select a field to edit:',
                     components: [selectRow],
-                    ephemeral: true,
+                    flags: 64,
                     fetchReply: true
                 });
                 
@@ -525,7 +525,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 if (!embed.data.fields || embed.data.fields.length === 0) {
                     await i.reply({
                         content: 'There are no fields to remove.',
-                        ephemeral: true
+                        flags: 64
                     });
                     break;
                 }
@@ -548,7 +548,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 const selectMessage = await i.reply({
                     content: 'Select a field to remove:',
                     components: [selectRow],
-                    ephemeral: true,
+                    flags: 64,
                     fetchReply: true
                 });
                 
@@ -692,7 +692,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 const selectMessage = await i.reply({
                     content: 'Select a color:',
                     components: [selectRow],
-                    ephemeral: true,
+                    flags: 64,
                     fetchReply: true
                 });
                 
@@ -759,7 +759,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 const selectMessage = await i.reply({
                     content: 'Select a timestamp option:',
                     components: [selectRow],
-                    ephemeral: true,
+                    flags: 64,
                     fetchReply: true
                 });
                 
@@ -809,7 +809,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                                 console.error('Invalid timestamp:', error);
                                 await submitted.reply({
                                     content: 'Invalid timestamp format. Please use ISO format (YYYY-MM-DDTHH:MM:SSZ).',
-                                    ephemeral: true
+                                    flags: 64
                                 });
                             }
                         }
@@ -891,13 +891,13 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                         
                         await submitted.reply({
                             content: `Template "${name}" saved successfully!`,
-                            ephemeral: true
+                            flags: 64
                         });
                     } catch (error) {
                         console.error('Error saving template:', error);
                         await submitted.reply({
                             content: 'An error occurred while saving the template.',
-                            ephemeral: true
+                            flags: 64
                         });
                     }
                 }
@@ -921,7 +921,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 
                 await i.reply({
                     content: `\`\`\`json\n${jsonStr.length > 1900 ? jsonStr.substring(0, 1900) + '\n... (truncated)' : jsonStr}\n\`\`\``,
-                    ephemeral: true
+                    flags: 64
                 });
                 break;
             }
@@ -938,7 +938,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 if (channels.length === 0) {
                     await i.reply({
                         content: "I don't have permission to send messages in any text channels.",
-                        ephemeral: true
+                        flags: 64
                     });
                     break;
                 }
@@ -954,7 +954,7 @@ async function startEmbedBuilder(interaction, initialEmbed, messageContent = '')
                 const selectMsg = await i.reply({
                     content: 'Select the channel to post the embed in:',
                     components: [row],
-                    ephemeral: true,
+                    flags: 64,
                     fetchReply: true
                 });
                 

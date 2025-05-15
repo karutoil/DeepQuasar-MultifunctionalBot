@@ -11,7 +11,7 @@ module.exports = {
         if (level !== null) {
             const check = voiceChannelCheck(interaction, 'volume');
             if (!check.pass) {
-                return interaction.reply({ embeds: [check.embed], ephemeral: true });
+                return interaction.reply({ embeds: [check.embed], flags: 64 });
             }
         }
         
@@ -31,7 +31,7 @@ module.exports = {
                     .setDescription(`${currentVolume}%`)
                     .setTimestamp();
                 
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: 64 });
             } catch (error) {
                 console.error('Error getting volume:', error);
                 return interaction.reply({ 
@@ -42,7 +42,7 @@ module.exports = {
                             .setDescription('100%')
                             .setTimestamp()
                     ], 
-                    ephemeral: true 
+                    flags: 64 
                 });
             }
         }
@@ -55,7 +55,7 @@ module.exports = {
                     .setTitle('❌ Not Playing')
                     .setDescription('There is no active player to set volume for.')
                     .setTimestamp();
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: 64 });
             }
             
             const normalizedVolume = level / 100;
@@ -71,10 +71,10 @@ module.exports = {
                 .setDescription(`Set to ${level}%.`)
                 .setTimestamp();
             
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         } catch (error) {
             console.error('Error setting volume:', error);
-            return interaction.reply({ content: 'Failed to set volume.', ephemeral: true });
+            return interaction.reply({ content: 'Failed to set volume.', flags: 64 });
         }
     }
 };

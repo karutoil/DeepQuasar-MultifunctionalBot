@@ -97,7 +97,7 @@ class TicketControlView {
         if (!ticket) {
             return await interaction.reply({
                 content: 'This channel is not a ticket.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -106,7 +106,7 @@ class TicketControlView {
         if (!settings) {
             return await interaction.reply({
                 content: 'Ticket system is not properly configured.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -118,7 +118,7 @@ class TicketControlView {
         if (!hasSupport) {
             return await interaction.reply({
                 content: 'You do not have permission to claim tickets.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -129,7 +129,7 @@ class TicketControlView {
 
         await interaction.reply({
             content: `Ticket claimed by ${interaction.user}.`,
-            ephemeral: false
+            flags: 0
         });
 
         // Log claim action
@@ -162,7 +162,7 @@ class TicketControlView {
         if (!ticket) {
             return await interaction.reply({
                 content: 'This channel is not a ticket.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -171,7 +171,7 @@ class TicketControlView {
         if (!settings || !settings.categoryArchive) {
             return await interaction.reply({
                 content: 'Ticket system is not properly configured.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -180,7 +180,7 @@ class TicketControlView {
         if (!archiveCategory) {
             return await interaction.reply({
                 content: 'Archive category not found. Please contact an administrator.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -196,7 +196,7 @@ class TicketControlView {
 
         await interaction.reply({
             content: 'Ticket closed and moved to archive.',
-            ephemeral: false
+            flags: 0
         });
 
         // Log ticket close action
@@ -230,7 +230,7 @@ class TicketControlView {
         if (!ticket) {
             return await interaction.reply({
                 content: 'This channel is not a ticket.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -239,7 +239,7 @@ class TicketControlView {
         if (!settings) {
             return await interaction.reply({
                 content: 'Ticket system is not properly configured.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -253,7 +253,7 @@ class TicketControlView {
         if (!hasSupport && !isClaimedByUser) {
             return await interaction.reply({
                 content: 'You do not have permission to delete this ticket.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -283,7 +283,7 @@ class TicketControlView {
         // Notify before deletion
         await interaction.reply({
             content: 'This ticket will be deleted in 5 seconds...',
-            ephemeral: false
+            flags: 0
         });
 
         // Delete the channel after a short delay

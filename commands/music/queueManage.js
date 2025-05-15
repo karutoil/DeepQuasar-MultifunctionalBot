@@ -9,7 +9,7 @@ async function move(interaction, client) {
     // Check if user is in a voice channel
     const check = voiceChannelCheck(interaction, 'move');
     if (!check.pass) {
-        return interaction.reply({ embeds: [check.embed], ephemeral: true });
+        return interaction.reply({ embeds: [check.embed], flags: 64 });
     }
     
     // Check DJ permissions
@@ -20,7 +20,7 @@ async function move(interaction, client) {
             .setTitle('❌ DJ Only')
             .setDescription('You need the DJ role to use this command.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const manager = client.musicManager;
@@ -32,7 +32,7 @@ async function move(interaction, client) {
             .setTitle('❌ Empty Queue')
             .setDescription('There are no tracks in the queue to move.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const fromPos = interaction.options.getInteger('from_pos');
@@ -45,7 +45,7 @@ async function move(interaction, client) {
             .setTitle('❌ Invalid Position')
             .setDescription(`The queue only has ${player.queue.tracks.length} track${player.queue.tracks.length !== 1 ? 's' : ''}.`)
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     // Get track at fromPos (convert from 1-based to 0-based)
@@ -74,7 +74,7 @@ async function remove(interaction, client) {
     // Check if user is in a voice channel
     const check = voiceChannelCheck(interaction, 'remove');
     if (!check.pass) {
-        return interaction.reply({ embeds: [check.embed], ephemeral: true });
+        return interaction.reply({ embeds: [check.embed], flags: 64 });
     }
     
     // Check DJ permissions
@@ -85,7 +85,7 @@ async function remove(interaction, client) {
             .setTitle('❌ DJ Only')
             .setDescription('You need the DJ role to use this command.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const manager = client.musicManager;
@@ -97,7 +97,7 @@ async function remove(interaction, client) {
             .setTitle('❌ Empty Queue')
             .setDescription('There are no tracks in the queue to remove.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const position = interaction.options.getInteger('position');
@@ -109,7 +109,7 @@ async function remove(interaction, client) {
             .setTitle('❌ Invalid Position')
             .setDescription(`The queue only has ${player.queue.tracks.length} track${player.queue.tracks.length !== 1 ? 's' : ''}.`)
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     // Get track info before removing (convert from 1-based to 0-based)

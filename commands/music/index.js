@@ -202,7 +202,7 @@ module.exports = {
             default:
                 return interaction.reply({ 
                     content: 'Unknown music command', 
-                    ephemeral: true 
+                    flags: 64 
                 });
         }
     },

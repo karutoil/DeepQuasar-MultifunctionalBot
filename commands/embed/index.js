@@ -134,7 +134,7 @@ module.exports = {
             default:
                 await interaction.reply({
                     content: 'Unknown subcommand',
-                    ephemeral: true
+                    flags: 64
                 });
         }
     }

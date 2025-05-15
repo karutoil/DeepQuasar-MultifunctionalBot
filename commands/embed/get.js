@@ -29,7 +29,7 @@ async function getEmbedJson(interaction) {
             /* console.log(`[GET] Message not found for ID: ${messageId}`) */;
             return await interaction.reply({ 
                 content: "Message not found or no embed.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -84,13 +84,13 @@ async function getEmbedJson(interaction) {
         
         await interaction.reply({ 
             content: `\`\`\`json\n${jsonStr}\n\`\`\``, 
-            ephemeral: true 
+            flags: 64 
         });
     } catch (error) {
         console.error('Error getting embed JSON:', error);
         await interaction.reply({ 
             content: "An error occurred while trying to get the embed JSON.", 
-            ephemeral: true 
+            flags: 64 
         });
     }
 }

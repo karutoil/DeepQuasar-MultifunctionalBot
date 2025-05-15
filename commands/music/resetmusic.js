@@ -19,7 +19,7 @@ async function checkAdminPermission(interaction) {
             .setTitle('❌ Permission Denied')
             .setDescription('You need Administrator permission to use this command.')
             .setTimestamp();
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
         return false;
     }
     return true;

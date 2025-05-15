@@ -9,7 +9,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'seek');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // Check DJ permissions
@@ -20,7 +20,7 @@ module.exports = {
                 .setTitle('❌ DJ Only')
                 .setDescription('You need the DJ role to use this command.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const manager = client.musicManager;
@@ -32,7 +32,7 @@ module.exports = {
                 .setTitle('❌ Nothing Playing')
                 .setDescription('There is nothing currently playing to seek in.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const currentTrack = player.queue.current;
@@ -42,7 +42,7 @@ module.exports = {
                 .setTitle('❌ No Current Track')
                 .setDescription('Failed to get current track information.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const seconds = interaction.options.getInteger('seconds');
@@ -55,7 +55,7 @@ module.exports = {
                 .setDescription('The specified position is outside the track duration.')
                 .setFooter({ text: `Track duration: ${formatDuration(currentTrack.duration || 0)}` })
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         await player.seek(milliseconds);

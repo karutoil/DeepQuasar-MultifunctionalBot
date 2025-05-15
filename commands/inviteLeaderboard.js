@@ -23,7 +23,7 @@ module.exports = {
     },
 
     async showLeaderboard(interaction) {
-        await interaction.deferReply({ ephemeral: false });
+        await interaction.deferReply({ flags: 0 });
         
         try {
             // Fetch all guild invites

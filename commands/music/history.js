@@ -16,7 +16,7 @@ module.exports = {
                 .setTitle('ℹ️ No History')
                 .setDescription('No tracks have been played yet.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const historyItems = history.slice(0, 10).map((item, i) => 
@@ -30,6 +30,6 @@ module.exports = {
             .setFooter({ text: `Requested by ${interaction.user.tag}` })
             .setTimestamp();
         
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
 };

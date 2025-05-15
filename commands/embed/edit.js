@@ -32,7 +32,7 @@ async function editEmbed(interaction) {
         if (!result) {
             return await interaction.reply({ 
                 content: "Message not found or no embed.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -43,7 +43,7 @@ async function editEmbed(interaction) {
             !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
             return await interaction.reply({ 
                 content: "You can only edit embeds you created unless you're an administrator.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -52,7 +52,7 @@ async function editEmbed(interaction) {
         if (!parsed) {
             return await interaction.reply({ 
                 content: "Invalid embed JSON.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -88,13 +88,13 @@ async function editEmbed(interaction) {
         
         await interaction.reply({ 
             content: "Embed updated successfully!", 
-            ephemeral: true 
+            flags: 64 
         });
     } catch (error) {
         console.error('Error editing embed:', error);
         await interaction.reply({ 
             content: "An error occurred while editing the embed.", 
-            ephemeral: true 
+            flags: 64 
         });
     }
 }

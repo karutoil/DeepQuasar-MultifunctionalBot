@@ -51,7 +51,7 @@ module.exports = {
         if (!channel.permissionsFor(interaction.guild.members.me).has('SendMessages')) {
             return await interaction.reply({ 
                 content: `I don't have permission to send messages in ${channel}!`, 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -60,7 +60,7 @@ module.exports = {
         
         await interaction.reply({ 
             content: `Welcome channel set to ${channel}`, 
-            ephemeral: true 
+            flags: 64 
         });
     },
 
@@ -71,7 +71,7 @@ module.exports = {
         if (!channel.permissionsFor(interaction.guild.members.me).has('SendMessages')) {
             return await interaction.reply({ 
                 content: `I don't have permission to send messages in ${channel}!`, 
-                ephemeral: true 
+                flags: 64 
             });
         }
         
@@ -80,7 +80,7 @@ module.exports = {
         
         await interaction.reply({ 
             content: `Leave channel set to ${channel}`, 
-            ephemeral: true 
+            flags: 64 
         });
     }
 };

@@ -9,7 +9,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'shuffle');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // Check DJ permissions
@@ -20,7 +20,7 @@ module.exports = {
                 .setTitle('❌ DJ Only')
                 .setDescription('You need the DJ role to use this command.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const manager = client.musicManager;
@@ -32,7 +32,7 @@ module.exports = {
                 .setTitle('❌ Not Enough Tracks')
                 .setDescription('There are not enough tracks in the queue to shuffle.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         player.queue.shuffle();

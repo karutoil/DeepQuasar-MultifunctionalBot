@@ -112,7 +112,7 @@ module.exports = {
             default:
                 await interaction.reply({
                     content: 'Unknown subcommand.',
-                    ephemeral: true
+                    flags: 64
                 });
         }
     },
@@ -126,7 +126,7 @@ module.exports = {
         if (!apiBase.startsWith('http://') && !apiBase.startsWith('https://')) {
             return await interaction.reply({
                 content: 'Invalid URL format. Must start with http:// or https://',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -140,7 +140,7 @@ module.exports = {
 
         await interaction.reply({
             content: `Local AI configured!\nEndpoint: \`${apiBase}\`\nModel: \`${modelName}\`\nAPI Key: ${apiKey ? 'Configured' : 'None'}`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -152,12 +152,12 @@ module.exports = {
         if (prompt) {
             await interaction.reply({
                 content: 'System prompt set! It will be prepended to all AI requests.',
-                ephemeral: true
+                flags: 64
             });
         } else {
             await interaction.reply({
                 content: 'System prompt cleared!',
-                ephemeral: true
+                flags: 64
             });
         }
     },
@@ -169,7 +169,7 @@ module.exports = {
 
         await interaction.reply({
             content: `Local AI responses ${enabled ? 'enabled' : 'disabled'}`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -181,13 +181,13 @@ module.exports = {
             await localAIModel.addWhitelistedChannel(interaction.guild.id, channel.id);
             await interaction.reply({
                 content: `Added ${channel} to whitelist`,
-                ephemeral: true
+                flags: 64
             });
         } else if (action === 'remove') {
             await localAIModel.removeWhitelistedChannel(interaction.guild.id, channel.id);
             await interaction.reply({
                 content: `Removed ${channel} from whitelist`,
-                ephemeral: true
+                flags: 64
             });
         }
     },
@@ -198,7 +198,7 @@ module.exports = {
         if (!channels.length) {
             return await interaction.reply({
                 content: 'No whitelisted channels',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -217,7 +217,7 @@ module.exports = {
 
         await interaction.reply({
             embeds: [embed],
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -228,12 +228,12 @@ module.exports = {
 
         await interaction.reply({
             content: `AI response chance set to ${chance}%`,
-            ephemeral: true
+            flags: 64
         });
     },
 
     async testAIConnection(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
 
         const message = interaction.options.getString('message');
         const config = await localAIModel.getConfig(interaction.guild.id);

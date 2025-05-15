@@ -10,7 +10,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'join');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // Everyone can use the join command (no DJ check needed)
@@ -29,10 +29,10 @@ module.exports = {
                     .setTitle('🎶 Already Connected')
                     .setDescription(`I'm already in ${voiceChannel.name}!`)
                     .setTimestamp();
-                return interaction.reply({ embeds: [embed], ephemeral: true });
+                return interaction.reply({ embeds: [embed], flags: 64 });
             }
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 64 });
             
             // Move to user's channel
             try {
@@ -60,7 +60,7 @@ module.exports = {
             }
         }
         
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         
         try {
             const player = manager.createPlayer({

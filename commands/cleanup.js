@@ -46,7 +46,7 @@ module.exports = {
         if (!interaction.channel.permissionsFor(interaction.guild.members.me).has(PermissionFlagsBits.ManageMessages)) {
             return await interaction.reply({ 
                 content: "I don't have permission to delete messages in this channel!", 
-                ephemeral: true 
+                flags: 64 
             });
         }
 
@@ -68,7 +68,7 @@ module.exports = {
     async cleanupMessages(interaction) {
         const amount = interaction.options.getInteger('amount');
         
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         
         try {
             // Discord.js bulk delete is limited to messages not older than 14 days
@@ -78,7 +78,7 @@ module.exports = {
             if (filteredMessages.size === 0) {
                 return await interaction.followUp({ 
                     content: "No messages found that can be deleted. Messages older than 14 days cannot be bulk deleted.", 
-                    ephemeral: true 
+                    flags: 64 
                 });
             }
             
@@ -87,19 +87,19 @@ module.exports = {
             
             await interaction.followUp({ 
                 content: `Deleted ${deletedCount} messages.`, 
-                ephemeral: true 
+                flags: 64 
             });
         } catch (error) {
             console.error('Error deleting messages:', error);
             await interaction.followUp({ 
                 content: "An error occurred while trying to delete messages.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
     },
 
     async cleanupAll(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         
         try {
             let totalDeleted = 0;
@@ -124,13 +124,13 @@ module.exports = {
             
             await interaction.followUp({ 
                 content: `Deleted ${totalDeleted} messages. Messages older than 14 days cannot be bulk deleted.`, 
-                ephemeral: true 
+                flags: 64 
             });
         } catch (error) {
             console.error('Error deleting all messages:', error);
             await interaction.followUp({ 
                 content: "An error occurred while trying to delete messages.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
     },
@@ -139,7 +139,7 @@ module.exports = {
         const user = interaction.options.getUser('user');
         const amount = interaction.options.getInteger('amount');
         
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         
         try {
             // First, fetch the full history up to 1000 messages to find user messages
@@ -171,7 +171,7 @@ module.exports = {
             if (userMessages.length === 0) {
                 return await interaction.followUp({ 
                     content: `No recent messages from ${user.tag} found that can be deleted.`, 
-                    ephemeral: true 
+                    flags: 64 
                 });
             }
             
@@ -207,13 +207,13 @@ module.exports = {
             
             await interaction.followUp({ 
                 content: `Deleted ${totalDeleted} messages from ${user.tag}.`, 
-                ephemeral: true 
+                flags: 64 
             });
         } catch (error) {
             console.error('Error deleting user messages:', error);
             await interaction.followUp({ 
                 content: "An error occurred while trying to delete messages.", 
-                ephemeral: true 
+                flags: 64 
             });
         }
     }

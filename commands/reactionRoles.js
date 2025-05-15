@@ -86,7 +86,7 @@ module.exports = {
 
         await interaction.reply({
             content: `Now creating a button-based role message: **${title}**\nUse \\\`/reactionroles add\\\` to add buttons to this message.`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -95,7 +95,7 @@ module.exports = {
         if (!pending) {
             return await interaction.reply({
                 content: "No role message in progress. Use `/reactionroles create` first.",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -114,7 +114,7 @@ module.exports = {
         if (!buttonStyle) {
             return await interaction.reply({
                 content: `Invalid button color: ${color}. Use one of: primary, secondary, success, danger.`,
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -126,7 +126,7 @@ module.exports = {
 
         await interaction.reply({
             content: `Added button **${label}** → ${role} to the role message.`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -135,14 +135,14 @@ module.exports = {
         if (!pending) {
             return await interaction.reply({
                 content: "No role message in progress. Use `/reactionroles create` first.",
-                ephemeral: true
+                flags: 64
             });
         }
 
         if (pending.buttons.length === 0) {
             return await interaction.reply({
                 content: "No buttons were added to this message!",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -181,7 +181,7 @@ module.exports = {
         } catch (error) {
             return await interaction.reply({
                 content: "Failed to send the role message. Check my permissions.",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -202,7 +202,7 @@ module.exports = {
 
         await interaction.reply({
             content: "Button-based role message posted!",
-            ephemeral: true
+            flags: 64
         });
     }
 };

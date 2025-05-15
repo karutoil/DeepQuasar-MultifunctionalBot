@@ -25,7 +25,7 @@ module.exports = {
         if (!role) {
             return await interaction.reply({
                 content: "The role associated with this button no longer exists.",
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -36,13 +36,13 @@ module.exports = {
                 await member.roles.remove(role, 'Button role removed');
                 await interaction.reply({
                     content: `Removed the role **${role.name}** from you.`,
-                    ephemeral: true
+                    flags: 64
                 });
             } catch (error) {
                 console.error(`Failed to remove role: ${error}`);
                 await interaction.reply({
                     content: "Failed to remove the role. Please try again later.",
-                    ephemeral: true
+                    flags: 64
                 });
             }
         } else {
@@ -51,13 +51,13 @@ module.exports = {
                 await member.roles.add(role, 'Button role added');
                 await interaction.reply({
                     content: `Assigned the role **${role.name}** to you.`,
-                    ephemeral: true
+                    flags: 64
                 });
             } catch (error) {
                 console.error(`Failed to assign role: ${error}`);
                 await interaction.reply({
                     content: "Failed to assign the role. Please try again later.",
-                    ephemeral: true
+                    flags: 64
                 });
             }
         }

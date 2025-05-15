@@ -57,7 +57,7 @@ module.exports = {
                 .setDescription('I need **Manage Roles** permission!')
                 .setColor(Colors.Red);
             
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         // Check role hierarchy
@@ -67,7 +67,7 @@ module.exports = {
                 .setDescription(`My role must be above ${role}!`)
                 .setColor(Colors.Red);
             
-            return await interaction.reply({ embeds: [embed], ephemeral: true });
+            return await interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         // Save to database
@@ -135,6 +135,6 @@ module.exports = {
             }
         }
         
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
     }
 };

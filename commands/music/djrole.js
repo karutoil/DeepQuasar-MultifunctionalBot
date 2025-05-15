@@ -10,7 +10,7 @@ async function setDJ(interaction, client) {
             .setTitle('❌ Permission Denied')
             .setDescription('You need administrator permissions to set DJ roles.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const role = interaction.options.getRole('role');
@@ -30,7 +30,7 @@ async function setDJ(interaction, client) {
         return interaction.reply({ embeds: [embed] });
     } catch (error) {
         console.error('Error setting DJ role:', error);
-        return interaction.reply({ content: 'Failed to set DJ role.', ephemeral: true });
+        return interaction.reply({ content: 'Failed to set DJ role.', flags: 64 });
     }
 }
 
@@ -42,7 +42,7 @@ async function clearDJ(interaction, client) {
             .setTitle('❌ Permission Denied')
             .setDescription('You need administrator permissions to clear DJ roles.')
             .setTimestamp();
-        return interaction.reply({ embeds: [embed], ephemeral: true });
+        return interaction.reply({ embeds: [embed], flags: 64 });
     }
     
     const guildId = interaction.guildId;
@@ -60,7 +60,7 @@ async function clearDJ(interaction, client) {
         return interaction.reply({ embeds: [embed] });
     } catch (error) {
         console.error('Error clearing DJ role:', error);
-        return interaction.reply({ content: 'Failed to clear DJ role.', ephemeral: true });
+        return interaction.reply({ content: 'Failed to clear DJ role.', flags: 64 });
     }
 }
 

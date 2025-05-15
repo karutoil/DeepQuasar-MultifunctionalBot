@@ -88,7 +88,7 @@ module.exports = {
             default:
                 await interaction.reply({
                     content: 'Unknown subcommand.',
-                    ephemeral: true
+                    flags: 64
                 });
         }
     },
@@ -110,7 +110,7 @@ module.exports = {
 
         await interaction.reply({
             content: `✅ Ticket system configured:\n- Open tickets category: ${openCategory}\n- Archive category: ${archiveCategory}\n- Support role: ${supportRole}\n- Log channel: ${logChannel}`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -141,7 +141,7 @@ module.exports = {
 
         await interaction.reply({
             content: `✅ Ticket panel created in ${channel}`,
-            ephemeral: true
+            flags: 64
         });
     },
 
@@ -151,7 +151,7 @@ module.exports = {
         if (!settings) {
             return await interaction.reply({
                 content: 'Ticket system is not configured. Please contact an administrator.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -160,7 +160,7 @@ module.exports = {
         if (!category) {
             return await interaction.reply({
                 content: 'Tickets category not found. Please contact an administrator.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -173,7 +173,7 @@ module.exports = {
             if (existingTicket) {
                 return await interaction.reply({
                     content: `You already have an open ticket: ${existingTicket}`,
-                    ephemeral: true
+                    flags: 64
                 });
             }
         }
@@ -245,7 +245,7 @@ module.exports = {
             // Reply to the original interaction
             await interaction.reply({
                 content: `✅ Your ticket has been created: ${ticketChannel}`,
-                ephemeral: true
+                flags: 64
             });
 
             // Log ticket creation with enhanced embed
@@ -270,7 +270,7 @@ module.exports = {
             console.error('Error creating ticket:', error);
             await interaction.reply({
                 content: 'Failed to create ticket. Please try again later.',
-                ephemeral: true
+                flags: 64
             });
         }
     },
@@ -281,7 +281,7 @@ module.exports = {
         if (!ticket) {
             return await interaction.reply({
                 content: 'This command can only be used in a ticket channel.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -291,7 +291,7 @@ module.exports = {
         if (ticket.participants.includes(user.id)) {
             return await interaction.reply({
                 content: `${user} is already in this ticket.`,
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -310,7 +310,7 @@ module.exports = {
 
         await interaction.reply({
             content: `✅ Added ${user} to the ticket.`,
-            ephemeral: false
+            flags: 0
         });
     },
 
@@ -320,7 +320,7 @@ module.exports = {
         if (!ticket) {
             return await interaction.reply({
                 content: 'This command can only be used in a ticket channel.',
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -330,7 +330,7 @@ module.exports = {
         if (user.id === ticket.creatorId) {
             return await interaction.reply({
                 content: `You cannot remove the ticket creator.`,
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -338,7 +338,7 @@ module.exports = {
         if (!ticket.participants.includes(user.id)) {
             return await interaction.reply({
                 content: `${user} is not in this ticket.`,
-                ephemeral: true
+                flags: 64
             });
         }
 
@@ -353,7 +353,7 @@ module.exports = {
 
         await interaction.reply({
             content: `✅ Removed ${user} from the ticket.`,
-            ephemeral: false
+            flags: 0
         });
     },
 

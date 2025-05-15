@@ -9,7 +9,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'leave');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // Check DJ permissions
@@ -20,7 +20,7 @@ module.exports = {
                 .setTitle('❌ DJ Only')
                 .setDescription('You need the DJ role to use this command.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const manager = client.musicManager;
@@ -32,10 +32,10 @@ module.exports = {
                 .setTitle('⚠️ Not Connected')
                 .setDescription('I\'m not connected to a voice channel.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: 64 });
         
         try {
             await player.destroy(`${interaction.member} left the voice channel`);

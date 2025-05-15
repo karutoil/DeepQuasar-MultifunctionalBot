@@ -480,7 +480,7 @@ client.on(Events.InteractionCreate, async interaction => {
         
         const errorReply = { 
             content: 'There was an error while executing this command!', 
-            ephemeral: true 
+            flags: 64 
         };
         
         // Only attempt to reply if the interaction hasn't been responded to yet

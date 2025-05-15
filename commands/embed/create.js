@@ -20,7 +20,7 @@ async function createEmbed(interaction) {
     if (!parsed) {
         return await interaction.reply({ 
             content: "Invalid embed JSON. Please check your input.", 
-            ephemeral: true 
+            flags: 64 
         });
     }
     
@@ -56,13 +56,13 @@ async function createEmbed(interaction) {
         
         await interaction.reply({ 
             content: `Embed posted in ${channel}! Message ID: \`${message.id}\``, 
-            ephemeral: true 
+            flags: 64 
         });
     } catch (error) {
         console.error('Error creating embed:', error);
         await interaction.reply({ 
             content: "I don't have permission to send messages there, or the JSON is malformed.", 
-            ephemeral: true 
+            flags: 64 
         });
     }
 }

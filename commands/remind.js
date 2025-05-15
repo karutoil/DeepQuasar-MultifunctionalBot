@@ -30,7 +30,7 @@ module.exports = {
             if (!reminderTime) {
                 return interaction.reply({
                     content: 'Invalid date or time format. Please try again.',
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -38,7 +38,7 @@ module.exports = {
             if (reminderTime <= now) {
                 return interaction.reply({
                     content: 'The specified time is in the past. Please provide a future time.',
-                    ephemeral: true
+                    flags: 64
                 });
             }
 
@@ -67,13 +67,13 @@ module.exports = {
 
             await interaction.reply({
                 content: `Reminder set for ${reminderTime.toLocaleString()}: ${message}`,
-                ephemeral: true
+                flags: 64
             });
         } catch (error) {
             console.error('Error setting reminder:', error);
             interaction.reply({
                 content: 'There was an error setting your reminder. Please try again.',
-                ephemeral: true
+                flags: 64
             });
         }
     }

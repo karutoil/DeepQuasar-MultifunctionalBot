@@ -9,7 +9,7 @@ module.exports = {
         // Check if user is in a voice channel
         const check = voiceChannelCheck(interaction, 'nowplaying');
         if (!check.pass) {
-            return interaction.reply({ embeds: [check.embed], ephemeral: true });
+            return interaction.reply({ embeds: [check.embed], flags: 64 });
         }
         
         // No DJ check needed for read-only commands
@@ -23,7 +23,7 @@ module.exports = {
                 .setTitle('⚠️ Nothing Playing')
                 .setDescription('There is no track currently playing.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
         
         const current = player.queue.current;
@@ -33,7 +33,7 @@ module.exports = {
                 .setTitle('⚠️ Nothing Playing')
                 .setDescription('There is no track currently playing.')
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         }
 
         try {
@@ -84,10 +84,10 @@ module.exports = {
                 embed.setThumbnail(trackInfo.thumbnail);
             }
             
-            return interaction.reply({ embeds: [embed], ephemeral: true });
+            return interaction.reply({ embeds: [embed], flags: 64 });
         } catch (error) {
             console.error('Error displaying now playing:', error);
-            return interaction.reply({ content: 'Failed to display currently playing track.', ephemeral: true });
+            return interaction.reply({ content: 'Failed to display currently playing track.', flags: 64 });
         }
     }
 };
