@@ -194,7 +194,7 @@ For more details about the automatic version increment system, see [docs/version
 
 This bot was created with the assistance of:
 - DeepSeek V3
-- ChatGPT 4.1
+- ChatGPT 4.1 (Quasar Alpha and Quasar Optius)
 - Claude 3.7 Sonnet
 
 Maintained by Karutoil.
